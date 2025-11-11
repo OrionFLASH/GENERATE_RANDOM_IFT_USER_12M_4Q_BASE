@@ -248,6 +248,67 @@ generator = UserGenerator(
 output_file = generator.process()
 ```
 
+#### `UserChangeGenerator`
+
+Класс для генерации таблицы изменений пользователей (USER_CNG) - движения сотрудников по подразделениям в течение 12 месяцев.
+
+**Параметры инициализации:**
+- `config` (Dict): Словарь конфигурации из `LOADER_CONFIG['USER_CNG']`
+- `users_data` (pd.DataFrame): DataFrame с данными пользователей (из листа USERS)
+- `org_data` (pd.DataFrame): DataFrame с данными организационных единиц (из листа ORG)
+- `gray_zone_config` (Dict): Конфигурация специальных пользователей "Серая зона"
+- `output_file_base` (str): Базовое имя выходного Excel файла
+- `output_dir` (str): Директория для выходных файлов
+- `logger` (Optional[logging.Logger]): Логгер для записи событий
+
+**Методы:**
+- `_filter_special_users(df, gray_zone_config)` - Фильтрует специальных пользователей "Серая зона" из DataFrame
+- `_get_initial_staff(users_df)` - Вычисляет начальный штат по подразделениям и бизнес-блокам
+- `_categorize_users(users_df)` - Категоризирует пользователей по типам движения (60% не меняют, 20% меняют ГОСБ, 10% меняют ТБ+ГОСБ, 5% увольняются, 5% новые)
+- `_get_available_org_units(org_data, current_org, block, current_tb=None)` - Возвращает список доступных подразделений для перехода
+- `_simulate_movements(users_df, initial_staff)` - Симулирует движение сотрудников по месяцам с учетом всех правил и ограничений
+- `save_to_excel(df)` - Сохраняет данные USER_CNG в Excel с форматированием
+- `process(gray_zone_config)` - Выполняет полный цикл генерации изменений пользователей
+
+#### `ClientGenerator`
+
+Класс для генерации клиентов (организаций) с уникальными ИНН и наименованиями.
+
+**Параметры инициализации:**
+- `config` (Dict): Словарь конфигурации из `LOADER_CONFIG['CLIENTS']`
+- `output_file_base` (str): Базовое имя выходного Excel файла
+- `output_dir` (str): Директория для выходных файлов
+- `logger` (Optional[logging.Logger]): Логгер для записи событий
+
+**Методы:**
+- `_generate_inn(is_ip)` - Генерирует уникальный ИНН (12 знаков для ИП, 10 знаков для организаций с дополнением до 12)
+- `_generate_company_name(is_ip, attempt_number)` - Генерирует уникальное наименование организации
+- `_generate_clients()` - Генерирует список клиентов (20% ИП, 80% организаций)
+- `save_to_excel(clients)` - Сохраняет данные CLIENTS в Excel с форматированием (ИНН как текст)
+- `process()` - Выполняет полный цикл генерации клиентов
+
+#### `ClientChangeGenerator`
+
+Класс для генерации таблицы изменений клиентов (CLIENT_CNG) - движения клиентов между менеджерами в течение 12 месяцев.
+
+**Параметры инициализации:**
+- `config` (Dict): Словарь конфигурации из `LOADER_CONFIG['CLIENT_CNG']`
+- `clients_data` (pd.DataFrame): DataFrame с данными клиентов (из листа CLIENTS)
+- `user_cng_data` (pd.DataFrame): DataFrame с данными изменений пользователей (из листа USER_CNG)
+- `output_file_base` (str): Базовое имя выходного Excel файла
+- `output_dir` (str): Директория для выходных файлов
+- `logger` (Optional[logging.Logger]): Логгер для записи событий
+
+**Методы:**
+- `_preload_managers_data()` - Предзагружает данные о менеджерах для всех 12 месяцев (оптимизация производительности)
+- `_get_available_managers_from_cache(month, managers_cache, current_tb, current_gosb)` - Получает список доступных менеджеров из кэша
+- `_get_manager_info(tab_number, month)` - Получает информацию о менеджере в указанный месяц из USER_CNG
+- `_prepare_clients_with_multiple_rows(clients_df)` - Подготавливает клиентов с несколькими строками (5% клиентов, от 0 до 10 повторов)
+- `_categorize_clients(clients_df)` - Категоризирует клиентов по типам движения
+- `_simulate_client_movements(clients_df)` - Симулирует движение клиентов между менеджерами по месяцам
+- `save_to_excel(df)` - Сохраняет данные CLIENT_CNG в Excel с форматированием (ИНН и табельные номера как текст с лидирующими нулями)
+- `process()` - Выполняет полный цикл генерации изменений клиентов
+
 #### `OrgUnitsLoader`
 
 Класс для загрузки и обработки организационных единиц из CSV файла.
