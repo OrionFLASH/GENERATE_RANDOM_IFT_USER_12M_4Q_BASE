@@ -3315,22 +3315,33 @@ class FactSheetGenerator:
         for month in range(1, 13):
             month_data = {}
             for _, row in managers_df.iterrows():
-                tab_number = str(row['Табельный номер']).strip()
+                tab_number_raw = str(row['Табельный номер']).strip()
+                # Нормализуем табельный номер: убираем лидирующие нули для ключа, но сохраняем оригинал
+                tab_number_key = tab_number_raw.lstrip('0') if tab_number_raw.lstrip('0') else tab_number_raw
+                tab_number_zfilled = tab_number_raw.zfill(8)  # Для отображения
+                
                 org_code = str(row.get(f'Месяц_{month}_Код подразделения', '-')).strip()
                 
                 # Пропускаем менеджеров без подразделения
                 if org_code == '-' or org_code == '' or pd.isna(org_code):
                     continue
                 
-                month_data[tab_number] = {
-                    'Табельный номер': tab_number,
+                # Сохраняем с несколькими ключами для быстрого поиска
+                manager_info = {
+                    'Табельный номер': tab_number_zfilled,
                     'ФИО': row['ФИО'],
                     'Код подразделения': org_code,
                     'Короткое ТБ': str(row.get(f'Месяц_{month}_Короткое ТБ', '-')).strip(),
                     'Полное ГОСБ': str(row.get(f'Месяц_{month}_Полное ГОСБ', '-')).strip()
                 }
+                
+                # Сохраняем с разными вариантами ключей для совместимости
+                month_data[tab_number_key] = manager_info
+                month_data[tab_number_raw] = manager_info
+                month_data[tab_number_zfilled] = manager_info
             
             self.managers_cache[month] = month_data
+            self.logger.debug(f"Загружено {len(month_data)} менеджеров для месяца {month} [class: FactSheetGenerator | def: _preload_managers_data]")
         
         self.logger.debug(f"Предзагружены данные менеджеров для {len(self.managers_cache)} месяцев [class: FactSheetGenerator | def: _preload_managers_data]")
     
@@ -3672,20 +3683,54 @@ class FactSheetGenerator:
         if client_tab_col in result_df.columns:
             # Создаем колонки для менеджеров
             result_df[tab_col] = result_df[client_tab_col]
-            result_df[fio_col] = result_df[client_tab_col].apply(
-                lambda x: month_managers.get(str(x).strip(), {}).get('ФИО', '-') if str(x).strip() != '-' else '-'
-            )
-            result_df[org_code_col] = result_df[client_tab_col].apply(
-                lambda x: month_managers.get(str(x).strip(), {}).get('Код подразделения', '-') if str(x).strip() != '-' else '-'
-            )
-            result_df[tb_col] = result_df[client_tab_col].apply(
-                lambda x: month_managers.get(str(x).strip(), {}).get('Короткое ТБ', '-') if str(x).strip() != '-' else '-'
-            )
-            result_df[gosb_col] = result_df[client_tab_col].apply(
-                lambda x: month_managers.get(str(x).strip(), {}).get('Полное ГОСБ', '-') if str(x).strip() != '-' else '-'
-            )
+            
+            # Получаем уникальные табельные номера для отладки
+            unique_tabs = result_df[client_tab_col].astype(str).str.strip().unique()
+            unique_tabs = [t for t in unique_tabs if t != '-' and t != 'nan' and t != '']
+            self.logger.debug(f"Найдено {len(unique_tabs)} уникальных табельных номеров в данных клиентов для месяца {month} [class: FactSheetGenerator | def: _add_managers_data]")
+            
+            # Проверяем, сколько из них есть в кэше менеджеров
+            found_in_cache = sum(1 for t in unique_tabs if t in month_managers)
+            self.logger.debug(f"Из {len(unique_tabs)} табельных номеров найдено в кэше менеджеров: {found_in_cache} [class: FactSheetGenerator | def: _add_managers_data]")
+            
+            if found_in_cache == 0 and len(unique_tabs) > 0:
+                # Пробуем найти с лидирующими нулями
+                sample_tab = unique_tabs[0]
+                sample_tab_zfilled = sample_tab.zfill(8)
+                self.logger.warning(f"Табельные номера не найдены в кэше. Пример: '{sample_tab}' (zfill: '{sample_tab_zfilled}'). Ключи в кэше (первые 5): {list(month_managers.keys())[:5]} [class: FactSheetGenerator | def: _add_managers_data]")
+            
+            # Создаем колонки для менеджеров с правильным форматированием табельных номеров
+            def get_manager_info(tab_num, field):
+                if pd.isna(tab_num) or str(tab_num).strip() == '-' or str(tab_num).strip() == '' or str(tab_num).strip() == 'nan':
+                    return '-'
+                tab_str = str(tab_num).strip()
+                # Пробуем найти с лидирующими нулями и без
+                manager = month_managers.get(tab_str, None)
+                if manager is None:
+                    # Пробуем с лидирующими нулями
+                    tab_zfilled = tab_str.zfill(8)
+                    manager = month_managers.get(tab_zfilled, None)
+                if manager is None:
+                    # Пробуем без лидирующих нулей
+                    tab_no_zeros = tab_str.lstrip('0')
+                    if tab_no_zeros:
+                        manager = month_managers.get(tab_no_zeros, None)
+                
+                if manager:
+                    return manager.get(field, '-')
+                return '-'
+            
+            result_df[fio_col] = result_df[client_tab_col].apply(lambda x: get_manager_info(x, 'ФИО'))
+            result_df[org_code_col] = result_df[client_tab_col].apply(lambda x: get_manager_info(x, 'Код подразделения'))
+            result_df[tb_col] = result_df[client_tab_col].apply(lambda x: get_manager_info(x, 'Короткое ТБ'))
+            result_df[gosb_col] = result_df[client_tab_col].apply(lambda x: get_manager_info(x, 'Полное ГОСБ'))
+            
+            # Проверяем, сколько данных заполнено
+            filled_count = (result_df[fio_col] != '-').sum()
+            self.logger.info(f"Заполнено данных менеджеров для месяца {month}: {filled_count}/{len(result_df)} клиентов [class: FactSheetGenerator | def: _add_managers_data]")
         else:
             # Если колонки нет, заполняем '-'
+            self.logger.warning(f"Колонка {client_tab_col} не найдена в данных клиентов для месяца {month} [class: FactSheetGenerator | def: _add_managers_data]")
             result_df[tab_col] = '-'
             result_df[fio_col] = '-'
             result_df[org_code_col] = '-'
