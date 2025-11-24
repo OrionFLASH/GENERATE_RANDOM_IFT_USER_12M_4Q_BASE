@@ -360,7 +360,7 @@ LOADER_CONFIG = {
         # Параметры для листов UP (нарастающие факты)
         'up': {
             'min_amount': 0,  # Минимальная начальная сумма
-            'max_amount': 200_000_000,  # Максимальная начальная сумма (200 млн)
+            'max_amount': 500_000_000,  # Максимальная начальная сумма (200 млн)
             'min_growth': 0,  # Минимальный прирост
             'max_growth': 100_000_000,  # Максимальный прирост (100 млн)
             'zero_in_first_month_max_pct': 0.05,  # Максимум 5% нулевых в 1 месяц
@@ -422,8 +422,8 @@ LOADER_CONFIG = {
         # Пример: [{'months': [1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12], 'fact_type': 'UP'}, {'months': [3], 'fact_type': 'DIF'}]
         # Если пустой список - отдельные файлы не создаются, только листы в основном файле
         'selected_months': [
-            {'months': [1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12], 'fact_type': 'UP'},
-            {'months': [3], 'fact_type': 'DIF'}
+            {'months': [1, 12], 'fact_type': 'UP'},
+            {'months': [1, 12], 'fact_type': 'DIF'}
         ],
         
         # Параметры для добавления данных клиентских менеджеров
@@ -3643,7 +3643,14 @@ class FactSheetGenerator:
         if not self.include_managers:
             return clients_df
         
+        # Сохраняем все существующие колонки, включая колонку факта
         result_df = clients_df.copy()
+        
+        # Проверяем наличие колонки факта перед добавлением менеджеров
+        fact_col = f'Месяц_{month}_Факт'
+        has_fact_col = fact_col in result_df.columns
+        if has_fact_col:
+            self.logger.debug(f"Колонка факта {fact_col} присутствует перед добавлением менеджеров: {len(result_df)} строк [class: FactSheetGenerator | def: _add_managers_data]")
         
         # Получаем данные менеджеров для этого месяца из кэша
         month_managers = self.managers_cache.get(month, {})
@@ -3685,6 +3692,12 @@ class FactSheetGenerator:
             result_df[tb_col] = '-'
             result_df[gosb_col] = '-'
         
+        # Проверяем, что колонка факта не потерялась
+        if has_fact_col and fact_col not in result_df.columns:
+            self.logger.error(f"Колонка факта {fact_col} потеряна после добавления менеджеров!")
+        elif has_fact_col:
+            self.logger.debug(f"Колонка факта {fact_col} сохранена после добавления менеджеров: {len(result_df)} строк [class: FactSheetGenerator | def: _add_managers_data]")
+        
         return result_df
     
     def _save_sheet_to_main_file_optimized(self, df: pd.DataFrame, month: int, fact_type: str, writer: pd.ExcelWriter) -> None:
@@ -3723,10 +3736,16 @@ class FactSheetGenerator:
         columns = [col for col in columns if col in df.columns]
         result_df = df[columns].copy()
         
+        # Проверяем наличие данных
+        if result_df.empty:
+            self.logger.warning(f"Пустой DataFrame для листа {sheet_name} [class: FactSheetGenerator | def: _save_sheet_to_main_file_optimized]")
+        else:
+            self.logger.debug(f"Сохранение листа {sheet_name}: {len(result_df)} строк, колонки: {list(result_df.columns)} [class: FactSheetGenerator | def: _save_sheet_to_main_file_optimized]")
+        
         # Сохраняем в Excel
         result_df.to_excel(writer, sheet_name=sheet_name, index=False)
         
-        # Получаем объект листа для форматирования
+        # Получаем объект листа для форматирования (после сохранения лист доступен)
         worksheet = writer.sheets[sheet_name]
         
         # Устанавливаем текстовый формат для колонки ИНН
@@ -4032,6 +4051,11 @@ class FactSheetGenerator:
                 # Генерируем UP факты
                 self.logger.debug(f"Генерация UP фактов для месяца {month} [class: FactSheetGenerator | def: process]")
                 clients_df_up = self._generate_up_facts(clients_df.copy(), month)
+                fact_col_up = f'Месяц_{month}_Факт'
+                if fact_col_up not in clients_df_up.columns:
+                    self.logger.error(f"Колонка факта {fact_col_up} не найдена после генерации UP фактов!")
+                else:
+                    self.logger.debug(f"UP факты сгенерированы: {len(clients_df_up)} клиентов, колонка {fact_col_up} присутствует [class: FactSheetGenerator | def: process]")
                 clients_df_up = self._add_managers_data(clients_df_up, month)
                 generated_data[(month, 'UP')] = clients_df_up.copy()
                 self._save_sheet_to_main_file_optimized(clients_df_up, month, 'UP', writer)
@@ -4039,6 +4063,11 @@ class FactSheetGenerator:
                 # Генерируем DIF факты
                 self.logger.debug(f"Генерация DIF фактов для месяца {month} [class: FactSheetGenerator | def: process]")
                 clients_df_dif = self._generate_dif_facts(clients_df.copy(), month)
+                fact_col_dif = f'Месяц_{month}_Факт'
+                if fact_col_dif not in clients_df_dif.columns:
+                    self.logger.error(f"Колонка факта {fact_col_dif} не найдена после генерации DIF фактов!")
+                else:
+                    self.logger.debug(f"DIF факты сгенерированы: {len(clients_df_dif)} клиентов, колонка {fact_col_dif} присутствует [class: FactSheetGenerator | def: process]")
                 clients_df_dif = self._add_managers_data(clients_df_dif, month)
                 generated_data[(month, 'DIF')] = clients_df_dif.copy()
                 self._save_sheet_to_main_file_optimized(clients_df_dif, month, 'DIF', writer)
