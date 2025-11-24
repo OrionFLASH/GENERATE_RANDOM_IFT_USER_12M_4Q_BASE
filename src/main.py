@@ -422,8 +422,8 @@ LOADER_CONFIG = {
         # Пример: [{'months': [1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12], 'fact_type': 'UP'}, {'months': [3], 'fact_type': 'DIF'}]
         # Если пустой список - отдельные файлы не создаются, только листы в основном файле
         'selected_months': [
-            {'months': [1, 12], 'fact_type': 'UP'},
-            {'months': [1, 12], 'fact_type': 'DIF'}
+            {'months': [8, 9, 10], 'fact_type': 'UP'},
+            {'months': [9, 10], 'fact_type': 'DIF'}
         ],
         
         # Параметры для добавления данных клиентских менеджеров
@@ -3815,6 +3815,15 @@ class FactSheetGenerator:
                     if cell.value and str(cell.value) != '-' and str(cell.value) != 'nan' and str(cell.value).strip() != '':
                         cell.value = str(cell.value).zfill(8)
         
+        # Устанавливаем числовой формат для колонки факта (с разделителем разрядов и двумя знаками после запятой)
+        if fact_col in result_df.columns:
+            fact_col_idx = list(result_df.columns).index(fact_col) + 1
+            fact_col_letter = get_column_letter(fact_col_idx)
+            for row in range(2, len(result_df) + 2):
+                cell = worksheet[f'{fact_col_letter}{row}']
+                # Формат: #,##0.00 (числовой с разделителем тысяч и двумя знаками после запятой)
+                cell.number_format = '#,##0.00'
+        
         # Закрепляем первую строку
         worksheet.freeze_panes = 'A2'
         
@@ -4005,6 +4014,15 @@ class FactSheetGenerator:
                         cell.number_format = '@'
                         if cell.value and str(cell.value) != '-' and str(cell.value) != 'nan' and str(cell.value).strip() != '':
                             cell.value = str(cell.value).zfill(8)
+            
+            # Устанавливаем числовой формат для колонки факта (с разделителем разрядов и двумя знаками после запятой)
+            if fact_col in result_df.columns:
+                fact_col_idx = list(result_df.columns).index(fact_col) + 1
+                fact_col_letter = get_column_letter(fact_col_idx)
+                for row in range(2, len(result_df) + 2):
+                    cell = worksheet[f'{fact_col_letter}{row}']
+                    # Формат: #,##0.00 (числовой с разделителем тысяч и двумя знаками после запятой)
+                    cell.number_format = '#,##0.00'
             
             # Закрепляем первую строку
             worksheet.freeze_panes = 'A2'
