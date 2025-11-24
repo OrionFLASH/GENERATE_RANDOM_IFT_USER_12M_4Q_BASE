@@ -36,6 +36,7 @@ LOADER_CONFIG = {
         # Настройки выходного листа
         'sheet_name': 'ORG',  # Имя листа в Excel
         'max_column_width': 100,  # Максимальная ширина колонки
+        'freeze_panes': 'A2',  # Закрепление панелей: строка и колонка (например, 'A2' = закреплена 1 строка, 'C2' = закреплена 1 строка и 2 колонки)
         
         # Фильтры для исключения строк
         'filters': {
@@ -59,6 +60,7 @@ LOADER_CONFIG = {
         # Настройки выходного листа
         'sheet_name': 'USERS',  # Имя листа в Excel
         'max_column_width': 100,  # Максимальная ширина колонки
+        'freeze_panes': 'A2',  # Закрепление панелей: строка и колонка (например, 'A2' = закреплена 1 строка, 'C2' = закреплена 1 строка и 2 колонки)
         
         # Параметры генерации пользователей по блокам
         'business_blocks': {
@@ -97,7 +99,8 @@ LOADER_CONFIG = {
             # '12345': {'KMKKSB': 5, 'MNS': 1},  # В подразделение 12345: 5 КМ и 1 МНС
             # '67890': {'KMKKSB': 50},  # В подразделение 67890: 50 КМ
             '10214308': {'KMKKSB': 1, 'MNS': 1},
-            '10354600': {'KMKKSB': 2, 'MNS': 1}
+            '10354600': {'KMKKSB': 2, 'MNS': 1},
+            '10164582': {'KMKKSB': 4, 'MNS': 1}
         },
         
         # Данные для генерации мужских ФИО
@@ -203,6 +206,228 @@ LOADER_CONFIG = {
                 'Владиславовна', 'Игоревна', 'Владимировна', 'Павловна', 'Руслановна'
             ]
         }
+    },
+    
+    'USER_CNG': {
+        # Настройки выходного листа
+        'sheet_name': 'USER_CNG',  # Имя листа в Excel
+        'max_column_width': 100,  # Максимальная ширина колонки
+        'freeze_panes': 'D2',  # Закрепление панелей: строка и колонка (например, 'A2' = закреплена 1 строка, 'C2' = закреплена 1 строка и 2 колонки)
+        
+        # Параметры движения сотрудников
+        'movement': {
+            'max_changes': 5,  # Максимальное количество смен подразделения (X)
+            'months': 12,  # Количество месяцев
+            'initial_distribution': {
+                'with_org': 0.9,  # 90% распределены в 1 месяц
+                'without_org': 0.1  # 10% без подразделения в 1 месяц
+            },
+            'categories': {
+                'no_change': 0.6,  # 60% не меняют подразделение
+                'change_gosb_only': 0.2,  # 20% меняют только ГОСБ внутри ТБ
+                'change_tb_gosb': 0.1,  # 10% могут поменять и ГОСБ и ТБ
+                'dismissed': 0.05,  # 5% могут уволиться
+                'new_employees': 0.05  # 5% - это те 10% без подразделения в 1 месяц (часть из них)
+            }
+        }
+    },
+    
+    'CLIENTS': {
+        # Настройки выходного листа
+        'sheet_name': 'CLIENTS',  # Имя листа в Excel
+        'max_column_width': 100,  # Максимальная ширина колонки
+        'freeze_panes': 'A2',  # Закрепление панелей: строка и колонка
+        
+        # Параметры генерации клиентов
+        'count': 20000,  # Количество организаций
+        
+        # Названия колонок
+        'columns': {
+            'inn': 'ИНН',
+            'name': 'Наименование'
+        },
+        
+        # Параметры ИНН
+        'inn': {
+            'ip_length': 12,  # Длина ИНН для ИП
+            'org_length': 10,  # Длина ИНН для организаций
+            'total_length': 12  # Общая длина с лидирующими нулями
+        },
+        
+        # Варианты организационно-правовых форм
+        'legal_forms': ['ООО', 'ЗАО', 'АО', 'ПАО', 'ИП'],
+        
+        # Распределение типов организаций (вероятность)
+        'org_type_distribution': {
+            'ip': 0.2,  # 20% ИП
+            'org': 0.8  # 80% организаций
+        },
+        
+        # Варианты названий организаций
+        'company_names': [
+            'Торговый дом', 'Стройкомплекс', 'Промышленный комплекс', 'Транспортная компания',
+            'Логистический центр', 'Сервисный центр', 'Технический центр', 'Бизнес-центр',
+            'Торговый центр', 'Производственный комплекс', 'Складской комплекс', 'Офисный центр',
+            'Деловой центр', 'Финансовый центр', 'Инвестиционный фонд', 'Страховая компания',
+            'Консалтинговая группа', 'Юридическая фирма', 'Аудиторская компания', 'Рекламное агентство',
+            'Маркетинговое агентство', 'IT-компания', 'Телекоммуникационная компания', 'Энергетическая компания',
+            'Нефтегазовая компания', 'Металлургический комбинат', 'Химический завод', 'Машиностроительный завод',
+            'Пищевой комбинат', 'Текстильная фабрика', 'Мебельная фабрика', 'Строительная компания',
+            'Дорожная компания', 'Жилищно-коммунальная компания', 'Медицинский центр', 'Образовательный центр',
+            'Научно-исследовательский институт', 'Проектный институт', 'Архитектурное бюро', 'Дизайн-студия'
+        ],
+        
+        # Приставки и суффиксы к названиям
+        'name_prefixes': [
+            'Центральный', 'Пригородный', 'Городской', 'Региональный', 'Федеральный',
+            'Международный', 'Национальный', 'Столичный', 'Крупнейший', 'Ведущий'
+        ],
+        
+        'name_suffixes': [
+            'филиал в г. Москва', 'филиал в г. Санкт-Петербург', 'филиал в г. Новосибирск',
+            'филиал в г. Екатеринбург', 'филиал в г. Казань', 'филиал в г. Нижний Новгород',
+            'филиал в г. Челябинск', 'филиал в г. Самара', 'филиал в г. Омск',
+            'филиал в г. Ростов-на-Дону', 'филиал в г. Уфа', 'филиал в г. Красноярск',
+            'филиал в г. Воронеж', 'филиал в г. Пермь', 'филиал в г. Волгоград'
+        ],
+        
+        # Варианты фамилий для ИП
+        'ip_surnames': [
+            'Иванов', 'Петров', 'Смирнов', 'Козлов', 'Попов', 'Соколов', 'Лебедев', 'Новиков',
+            'Морозов', 'Волков', 'Соловьев', 'Васильев', 'Зайцев', 'Павлов', 'Семенов',
+            'Голубев', 'Виноградов', 'Богданов', 'Воробьев', 'Федоров', 'Михайлов', 'Белов',
+            'Тарасов', 'Беляев', 'Комаров', 'Орлов', 'Киселев', 'Макаров', 'Андреев', 'Ковалев',
+            'Ильин', 'Гусев', 'Титов', 'Кузьмин', 'Кудрявцев', 'Баранов', 'Куликов', 'Алексеев',
+            'Степанов', 'Яковлев', 'Сорокин', 'Сергеев', 'Романов', 'Захаров', 'Борисов', 'Королев'
+        ],
+        
+        # Варианты инициалов для ИП
+        'ip_initials': [
+            'А.А.', 'А.Б.', 'А.В.', 'А.Г.', 'А.Д.', 'А.Е.', 'А.И.', 'А.К.', 'А.Л.', 'А.М.',
+            'А.Н.', 'А.О.', 'А.П.', 'А.Р.', 'А.С.', 'А.Т.', 'А.Ф.', 'А.Х.', 'А.Ц.', 'А.Ч.',
+            'Б.А.', 'Б.Б.', 'Б.В.', 'Б.Г.', 'Б.Д.', 'Б.Е.', 'Б.И.', 'Б.К.', 'Б.Л.', 'Б.М.',
+            'В.А.', 'В.Б.', 'В.В.', 'В.Г.', 'В.Д.', 'В.Е.', 'В.И.', 'В.К.', 'В.Л.', 'В.М.',
+            'Г.А.', 'Г.Б.', 'Г.В.', 'Г.Г.', 'Г.Д.', 'Г.Е.', 'Г.И.', 'Г.К.', 'Г.Л.', 'Г.М.',
+            'Д.А.', 'Д.Б.', 'Д.В.', 'Д.Г.', 'Д.Д.', 'Д.Е.', 'Д.И.', 'Д.К.', 'Д.Л.', 'Д.М.'
+        ]
+    },
+    
+    'CLIENT_CNG': {
+        # Настройки выходного листа
+        'sheet_name': 'CLIENT_CNG',  # Имя листа в Excel
+        'max_column_width': 100,  # Максимальная ширина колонки
+        'freeze_panes': 'C2',  # Закрепление панелей: строка и колонка
+        
+        # Параметры движения клиентов
+        'movement': {
+            'months': 12,  # Количество месяцев
+            'initial_distribution': {
+                'with_manager': 0.85,  # 85% с менеджером в 1 месяц
+                'without_manager': 0.15  # 15% без менеджера в 1 месяц
+            },
+            'categories': {
+                'no_change': 0.55,  # 55% не меняют менеджера с тех пор как появляются
+                'change_gosb_only': 0.10,  # 10% меняют менеджера, но остаются в одном ГОСБ
+                'change_tb_only': 0.15,  # 15% меняют менеджера, но остаются в одном ТБ
+                'change_tb_gosb': 0.10,  # 10% могут менять и ТБ и ГОСБ
+                'can_remove': 0.10  # 10% могут убрать табельный (в том числе из тех, кто появился позже)
+            },
+            'can_disappear': 0.05  # 5% в какой-то из месяцев могут пропасть (без табельного)
+        },
+        # Бизнес-блок для распределения клиентов
+        # Используем полное название, так как в USER_CNG сохраняется полное название, а не код
+        'business_block': 'Клиентские менеджеры',  # Только клиентские менеджеры (полное название из USER_CNG)
+        
+        # Параметры для клиентов с несколькими строками
+        'multiple_rows': {
+            'percentage': 0.05,  # 5% клиентов могут иметь несколько строк
+            'max_repeats': 10  # Максимальное количество повторов (от 0 до 10)
+        },
+        
+        # Форматы данных
+        'formats': {
+            'inn_length': 12,  # Длина ИНН с лидирующими нулями
+            'tab_number_length': 8  # Длина табельного номера с лидирующими нулями
+        }
+    },
+    
+    'FACT_SHEETS': {
+        # Настройки генерации листов с фактами (UP и DIF)
+        'output_dir': 'OUT',  # Директория для выходных файлов
+        'sheet_name': 'Sheet1',  # Имя листа внутри каждого файла (по умолчанию)
+        'max_column_width': 100,  # Максимальная ширина колонки
+        
+        # Параметры для листов UP (нарастающие факты)
+        'up': {
+            'min_amount': 0,  # Минимальная начальная сумма
+            'max_amount': 200_000_000,  # Максимальная начальная сумма (200 млн)
+            'min_growth': 0,  # Минимальный прирост
+            'max_growth': 100_000_000,  # Максимальный прирост (100 млн)
+            'zero_in_first_month_max_pct': 0.05,  # Максимум 5% нулевых в 1 месяц
+            'zero_growth_max_pct': 0.05,  # Максимум 5% приростов 0
+            'decrease_max_pct': 0.01,  # Максимум 1% клиентов могут снизить сумму относительно прошлого месяца
+            'categories': {
+                'growing': {
+                    'pct': 0.70,  # 70% клиентов растут
+                    'growth_type': 'random',  # Тип роста: 'random' (рандомный) или 'percentage' (процентный)
+                    'min_growth_pct': 0.01,  # Минимальный процент роста (если percentage)
+                    'max_growth_pct': 0.50,  # Максимальный процент роста (если percentage)
+                    'min_growth_amount': 1_000_000,  # Минимальная сумма роста (если random)
+                    'max_growth_amount': 100_000_000  # Максимальная сумма роста (если random)
+                },
+                'no_change': {
+                    'pct': 0.20  # 20% клиентов не меняют факт
+                },
+                'decreasing': {
+                    'pct': 0.10,  # 10% клиентов могут снижать
+                    'min_decrease_pct': 0.01,  # Минимальный процент снижения
+                    'max_decrease_pct': 0.10  # Максимальный процент снижения
+                }
+            }
+        },
+        
+        # Параметры для листов DIF (дифференциальные факты)
+        'dif': {
+            'min_amount': 0,  # Минимальная сумма (не может быть меньше 0)
+            'max_amount': 500_000_000,  # Максимальная начальная сумма (500 млн)
+            'min_change': -50_000_000,  # Минимальное изменение (может быть отрицательным)
+            'max_change': 100_000_000,  # Максимальное изменение (100 млн)
+            'categories': {
+                'start_with_zero': {
+                    'pct': 0.15  # 15% КМ стартуют с 0
+                },
+                'decreasing_debt': {
+                    'pct': 0.25,  # 25% снижают долг
+                    'min_decrease_pct': 0.05,  # Минимальный процент снижения
+                    'max_decrease_pct': 0.50  # Максимальный процент снижения
+                },
+                'seasonal': {
+                    'pct': 0.30,  # 30% двигаются сезонно
+                    'seasonal_pattern': 'up_down',  # Паттерн: 'up_down' (вверх-вниз) или 'down_up' (вниз-вверх)
+                    'min_seasonal_change': 10_000_000,  # Минимальное сезонное изменение
+                    'max_seasonal_change': 80_000_000  # Максимальное сезонное изменение
+                },
+                'fall_to_zero_no_recovery': {
+                    'pct': 0.10,  # 10% падают до 0 без восстановления
+                    'months_to_zero': [3, 4, 5, 6, 7, 8, 9]  # Месяцы, когда может упасть до 0
+                },
+                'normal_movement': {
+                    'pct': 0.20  # 20% нормальное движение (может расти и падать)
+                }
+            }
+        },
+        
+        # Параметры выбора месяцев и типов фактов
+        # Формат: список словарей, каждый словарь содержит 'months' (список месяцев) и 'fact_type' ('UP' или 'DIF')
+        # Пример: [{'months': [1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12], 'fact_type': 'UP'}, {'months': [3], 'fact_type': 'DIF'}]
+        'selected_months': [
+            {'months': [1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12], 'fact_type': 'UP'},
+            {'months': [3], 'fact_type': 'DIF'}
+        ],
+        
+        # Параметры для добавления данных клиентских менеджеров
+        'include_managers': True,  # Добавлять ли данные менеджеров из USER_CNG
+        'manager_business_block': 'Клиентские менеджеры'  # Бизнес-блок менеджеров для фильтрации
     }
     
     # Здесь в будущем можно добавить конфигурации для других листов:
@@ -543,8 +768,9 @@ class OrgUnitsLoader:
             # Получаем объект листа для форматирования
             worksheet = writer.sheets[self.sheet_name]
             
-            # Закрепляем первую строку
-            worksheet.freeze_panes = 'A2'
+            # Закрепляем панели согласно конфигурации
+            freeze_panes = self.config.get('freeze_panes', 'A2')
+            worksheet.freeze_panes = freeze_panes
             
             # Включаем автофильтр
             worksheet.auto_filter.ref = worksheet.dimensions
@@ -1200,8 +1426,9 @@ class UserGenerator:
                     # Если уже строка, проверяем длину и добавляем нули если нужно
                     cell.value = cell.value.zfill(self.tab_number_config['total_length'])
             
-            # Закрепляем первую строку
-            worksheet.freeze_panes = 'A2'
+            # Закрепляем панели согласно конфигурации
+            freeze_panes = self.config.get('freeze_panes', 'A2')
+            worksheet.freeze_panes = freeze_panes
             
             # Включаем автофильтр
             worksheet.auto_filter.ref = worksheet.dimensions
@@ -1285,6 +1512,2358 @@ def generate_users(
     return generator.process()
 
 
+class UserChangeGenerator:
+    """
+    Класс для генерации таблицы изменений пользователей (USER_CNG).
+    
+    Генерирует таблицу движения сотрудников по подразделениям в течение 12 месяцев
+    с учетом всех правил и ограничений.
+    """
+    
+    def __init__(
+        self,
+        config: Dict,
+        users_data: pd.DataFrame,
+        org_data: pd.DataFrame,
+        output_file_base: str,
+        output_dir: str = "OUT",
+        logger: Optional[logging.Logger] = None
+    ) -> None:
+        """
+        Инициализация генератора изменений пользователей.
+        
+        Args:
+            config: Словарь конфигурации из LOADER_CONFIG['USER_CNG']
+            users_data: DataFrame с данными пользователей (из листа USERS)
+            org_data: DataFrame с данными организационных единиц (из листа ORG)
+            output_file_base: Базовое имя выходного Excel файла
+            output_dir: Директория для выходных файлов
+            logger: Логгер для записи событий
+        """
+        self.config = config
+        self.users_data = users_data
+        self.org_data = org_data
+        self.output_file_base = output_file_base
+        self.output_dir = Path(output_dir)
+        self.output_dir.mkdir(exist_ok=True)
+        self.logger = logger or logging.getLogger(__name__)
+        
+        # Настройки Excel
+        self.sheet_name = config['sheet_name']
+        self.max_column_width = config.get('max_column_width', 100)
+        
+        # Параметры движения из конфигурации
+        movement_config = config['movement']
+        self.max_changes = movement_config['max_changes']
+        self.months = movement_config['months']
+        self.initial_distribution = movement_config['initial_distribution']
+        self.categories = movement_config['categories']
+        
+        # Импортируем random для генерации случайных значений
+        import random
+        self.random = random
+    
+    def _filter_special_users(self, df: pd.DataFrame, gray_zone_config: Dict) -> pd.DataFrame:
+        """
+        Фильтрация специальных пользователей (серая зона).
+        
+        Args:
+            df: DataFrame с пользователями
+            gray_zone_config: Конфигурация серой зоны из USERS
+            
+        Returns:
+            DataFrame без специальных пользователей
+        """
+        gray_zone_tab_numbers = set(gray_zone_config['tab_numbers'])
+        gray_zone_fio = set(gray_zone_config['fio_options'])
+        
+        # Фильтруем специальных пользователей
+        mask = ~(
+            df['Табельный номер'].isin(gray_zone_tab_numbers) |
+            df['ФИО'].isin(gray_zone_fio)
+        )
+        
+        filtered_df = df[mask].copy()
+        self.logger.debug(f"Отфильтровано специальных пользователей: {len(df) - len(filtered_df)} из {len(df)} [class: UserChangeGenerator | def: _filter_special_users]")
+        
+        return filtered_df
+    
+    def _get_initial_staff(self, users_df: pd.DataFrame) -> Dict[str, Dict[str, int]]:
+        """
+        Получение начального штата по подразделениям и блокам.
+        
+        Учитываются только пользователи с подразделениями (не те, кто без подразделения в 1 месяц).
+        
+        Args:
+            users_df: DataFrame с пользователями (только с подразделениями)
+            
+        Returns:
+            Словарь: {код_подразделения: {блок: количество}}
+        """
+        staff = {}
+        
+        for _, row in users_df.iterrows():
+            org_code = str(row['Код подразделения'])
+            # Пропускаем пользователей без подразделения
+            if org_code == '-' or org_code == '' or pd.isna(org_code):
+                continue
+                
+            block = row['Бизнес-блок']
+            
+            if org_code not in staff:
+                staff[org_code] = {}
+            
+            if block not in staff[org_code]:
+                staff[org_code][block] = 0
+            
+            staff[org_code][block] += 1
+        
+        self.logger.debug(f"Начальный штат: {len(staff)} подразделений [class: UserChangeGenerator | def: _get_initial_staff]")
+        
+        return staff
+    
+    def _categorize_users(self, users_df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Категоризация пользователей по типам движения.
+        
+        Args:
+            users_df: DataFrame с пользователями
+            
+        Returns:
+            DataFrame с добавленной колонкой 'category'
+        """
+        df = users_df.copy()
+        n = len(df)
+        
+        # Определяем количество пользователей в каждой категории
+        n_no_change = int(n * self.categories['no_change'])
+        n_change_gosb = int(n * self.categories['change_gosb_only'])
+        n_change_tb = int(n * self.categories['change_tb_gosb'])
+        n_dismissed = int(n * self.categories['dismissed'])
+        # Остальные - это те, кто может прийти (new_employees)
+        
+        # Создаем список категорий
+        categories = (
+            ['no_change'] * n_no_change +
+            ['change_gosb_only'] * n_change_gosb +
+            ['change_tb_gosb'] * n_change_tb +
+            ['dismissed'] * n_dismissed +
+            ['new_employee'] * (n - n_no_change - n_change_gosb - n_change_tb - n_dismissed)
+        )
+        
+        # Перемешиваем и присваиваем
+        self.random.shuffle(categories)
+        df['category'] = categories
+        
+        self.logger.debug(f"Категоризация: no_change={n_no_change}, change_gosb={n_change_gosb}, change_tb={n_change_tb}, dismissed={n_dismissed}, new={n - n_no_change - n_change_gosb - n_change_tb - n_dismissed} [class: UserChangeGenerator | def: _categorize_users]")
+        
+        return df
+    
+    def _get_available_org_units(self, org_data: pd.DataFrame, current_org: str, block: str, current_tb: str = None, current_gosb: str = None) -> List[Dict]:
+        """
+        Получение доступных подразделений для перевода.
+        
+        Args:
+            org_data: DataFrame с организационными единицами
+            current_org: Текущий код подразделения
+            block: Бизнес-блок (нельзя менять)
+            current_tb: Текущий код ТБ (для ограничения изменения только ГОСБ)
+            current_gosb: Текущий код ГОСБ
+            
+        Returns:
+            Список словарей с доступными подразделениями
+        """
+        available = []
+        
+        for _, row in org_data.iterrows():
+            org_code = str(row['Код подразделения'])
+            
+            # Пропускаем текущее подразделение
+            if org_code == current_org:
+                continue
+            
+            # Для изменения только ГОСБ - должны быть в том же ТБ
+            if current_tb and row['Код ТБ'] != current_tb:
+                continue
+            
+            available.append({
+                'Код подразделения': org_code,
+                'Код ТБ': row['Код ТБ'],
+                'Короткое ТБ': row['Короткое ТБ'],
+                'Код ГОСБ': row['Код ГОСБ'],
+                'Полное ГОСБ': row['Полное ГОСБ']
+            })
+        
+        return available
+    
+    def _simulate_movements(self, users_df: pd.DataFrame, initial_staff: Dict) -> pd.DataFrame:
+        """
+        Симуляция движения сотрудников по месяцам.
+        
+        Args:
+            users_df: DataFrame с пользователями
+            initial_staff: Начальный штат по подразделениям
+            
+        Returns:
+            DataFrame с данными для USER_CNG
+        """
+        self.logger.info("Начало симуляции движения сотрудников")
+        
+        # Создаем копию данных пользователей
+        result_data = []
+        
+        # Создаем словарь для отслеживания текущего состояния штата
+        current_staff = {org: {block: count for block, count in blocks.items()} 
+                        for org, blocks in initial_staff.items()}
+        
+        # Создаем словарь для отслеживания текущего подразделения каждого пользователя
+        user_current_org = {}
+        user_dismissed = set()
+        user_changes_count = {}
+        
+        # Инициализация: пользователи уже распределены (90% с подразделением, 10% без)
+        # Инициализируем пользователей на основе их текущего подразделения
+        for _, user in users_df.iterrows():
+            tab_number = str(user['Табельный номер'])
+            org_code = str(user['Код подразделения'])
+            
+            # Если подразделение "-" или пустое - пользователь без подразделения
+            if org_code == '-' or org_code == '' or pd.isna(org_code):
+                user_current_org[tab_number] = None
+            else:
+                user_current_org[tab_number] = org_code
+            
+            user_changes_count[tab_number] = 0
+        
+        # Симулируем каждый месяц
+        for month in range(1, self.months + 1):
+            self.logger.debug(f"Симуляция месяца {month} [class: UserChangeGenerator | def: _simulate_movements]")
+            
+            # Обрабатываем каждого пользователя
+            for _, user in users_df.iterrows():
+                tab_number = str(user['Табельный номер'])
+                block = user['Бизнес-блок']
+                category = user['category']
+                current_org = user_current_org.get(tab_number)
+                
+                # Если уволен - остается уволенным
+                if tab_number in user_dismissed:
+                    org_info = {
+                        'Код подразделения': '-',
+                        'Короткое ТБ': '-',
+                        'Полное ГОСБ': '-'
+                    }
+                # Если без подразделения (новый сотрудник)
+                elif current_org is None:
+                    # Может быть принят в этом месяце (вероятность)
+                    if self.random.random() < 0.1:  # 10% вероятность принятия в месяц
+                        # Находим подразделение с местом для этого блока
+                        available_orgs = [
+                            org for org, blocks in current_staff.items()
+                            if blocks.get(block, 0) < initial_staff.get(org, {}).get(block, 0)
+                        ]
+                        
+                        if available_orgs:
+                            new_org = self.random.choice(available_orgs)
+                            user_current_org[tab_number] = new_org
+                            current_staff[new_org][block] = current_staff[new_org].get(block, 0) + 1
+                            
+                            # Получаем информацию о подразделении
+                            org_row = self.org_data[self.org_data['Код подразделения'].astype(str) == new_org].iloc[0]
+                            org_info = {
+                                'Код подразделения': new_org,
+                                'Короткое ТБ': org_row['Короткое ТБ'],
+                                'Полное ГОСБ': org_row['Полное ГОСБ']
+                            }
+                        else:
+                            org_info = {
+                                'Код подразделения': '-',
+                                'Короткое ТБ': '-',
+                                'Полное ГОСБ': '-'
+                            }
+                    else:
+                        org_info = {
+                            'Код подразделения': '-',
+                            'Короткое ТБ': '-',
+                            'Полное ГОСБ': '-'
+                        }
+                # Если с подразделением
+                else:
+                    # Получаем текущую информацию о подразделении
+                    org_row = self.org_data[self.org_data['Код подразделения'].astype(str) == current_org].iloc[0]
+                    current_tb = org_row['Код ТБ']
+                    current_gosb = org_row['Код ГОСБ']
+                    
+                    # Проверяем категорию и возможность изменения
+                    can_change = (
+                        category != 'no_change' and
+                        user_changes_count[tab_number] < self.max_changes and
+                        tab_number not in user_dismissed
+                    )
+                    
+                    # Увольнение (5% могут уволиться)
+                    if category == 'dismissed' and self.random.random() < 0.05 / self.months:
+                        user_dismissed.add(tab_number)
+                        current_staff[current_org][block] = max(0, current_staff[current_org].get(block, 0) - 1)
+                        org_info = {
+                            'Код подразделения': '-',
+                            'Код ТБ': '-',
+                            'Короткое ТБ': '-',
+                            'Код ГОСБ': '-',
+                            'Полное ГОСБ': '-'
+                        }
+                    # Изменение подразделения
+                    elif can_change and self.random.random() < 0.1:  # 10% вероятность изменения в месяц
+                        # Получаем доступные подразделения
+                        if category == 'change_gosb_only':
+                            available = self._get_available_org_units(
+                                self.org_data, current_org, block, current_tb=current_tb
+                            )
+                        elif category == 'change_tb_gosb':
+                            available = self._get_available_org_units(
+                                self.org_data, current_org, block
+                            )
+                        else:
+                            available = []
+                        
+                        if available:
+                            # Проверяем, что в новом подразделении есть место
+                            valid_available = [
+                                a for a in available
+                                if current_staff.get(a['Код подразделения'], {}).get(block, 0) < 
+                                   initial_staff.get(a['Код подразделения'], {}).get(block, 0)
+                            ]
+                            
+                            if valid_available:
+                                new_org_info = self.random.choice(valid_available)
+                                new_org = new_org_info['Код подразделения']
+                                
+                                # Обновляем штат
+                                current_staff[current_org][block] = max(0, current_staff[current_org].get(block, 0) - 1)
+                                current_staff[new_org][block] = current_staff[new_org].get(block, 0) + 1
+                                
+                                # Обновляем текущее подразделение
+                                user_current_org[tab_number] = new_org
+                                user_changes_count[tab_number] += 1
+                                
+                                org_info = {
+                                    'Код подразделения': new_org_info['Код подразделения'],
+                                    'Короткое ТБ': new_org_info['Короткое ТБ'],
+                                    'Полное ГОСБ': new_org_info['Полное ГОСБ']
+                                }
+                            else:
+                                # Нет доступных мест - остается на месте
+                                org_info = {
+                                    'Код подразделения': current_org,
+                                    'Короткое ТБ': org_row['Короткое ТБ'],
+                                    'Полное ГОСБ': org_row['Полное ГОСБ']
+                                }
+                        else:
+                            # Нет доступных подразделений - остается на месте
+                            org_info = {
+                                'Код подразделения': current_org,
+                                'Короткое ТБ': org_row['Короткое ТБ'],
+                                'Полное ГОСБ': org_row['Полное ГОСБ']
+                            }
+                    else:
+                        # Остается на месте
+                        org_info = {
+                            'Код подразделения': current_org,
+                            'Короткое ТБ': org_row['Короткое ТБ'],
+                            'Полное ГОСБ': org_row['Полное ГОСБ']
+                        }
+                
+                # Сохраняем данные для этого месяца
+                if month == 1:
+                    # Первый месяц - создаем запись
+                    result_row = {
+                        'Табельный номер': tab_number,
+                        'ФИО': user['ФИО'],
+                        'Бизнес-блок': block
+                    }
+                else:
+                    # Находим существующую запись
+                    result_row = next((r for r in result_data if r['Табельный номер'] == tab_number), None)
+                    if result_row is None:
+                        result_row = {
+                            'Табельный номер': tab_number,
+                            'ФИО': user['ФИО'],
+                            'Бизнес-блок': block
+                        }
+                        result_data.append(result_row)
+                
+                # Добавляем данные месяца (только код подразделения, короткое ТБ и полное ГОСБ)
+                result_row[f'Месяц_{month}_Код подразделения'] = org_info['Код подразделения']
+                result_row[f'Месяц_{month}_Короткое ТБ'] = org_info['Короткое ТБ']
+                result_row[f'Месяц_{month}_Полное ГОСБ'] = org_info['Полное ГОСБ']
+                
+                if month == 1:
+                    result_data.append(result_row)
+        
+        # Проверяем ограничения: минимум 1 сотрудник каждого блока в каждом подразделении
+        # Проходим по каждому месяцу и исправляем нарушения
+        for month in range(1, self.months + 1):
+            for org_code, blocks in initial_staff.items():
+                for block, count in blocks.items():
+                    # Подсчитываем сотрудников в этом подразделении в этом месяце
+                    month_employees = sum(
+                        1 for row in result_data
+                        if row.get(f'Месяц_{month}_Код подразделения') == org_code and
+                        row['Бизнес-блок'] == block
+                    )
+                    
+                    # Если меньше 1 - добавляем сотрудника
+                    if month_employees < 1:
+                        # Находим сотрудника этого блока, который может быть переведен
+                        for row in result_data:
+                            if (row['Бизнес-блок'] == block and
+                                row.get(f'Месяц_{month}_Код подразделения') != org_code and
+                                row.get(f'Месяц_{month}_Код подразделения') != '-'):
+                                # Переводим в это подразделение
+                                try:
+                                    org_row = self.org_data[self.org_data['Код подразделения'].astype(str) == org_code].iloc[0]
+                                    row[f'Месяц_{month}_Код подразделения'] = org_code
+                                    row[f'Месяц_{month}_Короткое ТБ'] = org_row['Короткое ТБ']
+                                    row[f'Месяц_{month}_Полное ГОСБ'] = org_row['Полное ГОСБ']
+                                    break
+                                except (IndexError, KeyError):
+                                    # Если подразделение не найдено, пропускаем
+                                    continue
+        
+        # Проверяем, что все сотрудники хотя бы раз были в подразделении
+        # Находим сотрудников, которые ни разу не были в подразделении
+        users_never_in_org = []
+        for row in result_data:
+            tab_number = row['Табельный номер']
+            never_in_org = True
+            for month in range(1, self.months + 1):
+                org_code = row.get(f'Месяц_{month}_Код подразделения', '-')
+                if org_code != '-' and org_code != '' and not pd.isna(org_code):
+                    never_in_org = False
+                    break
+            if never_in_org:
+                users_never_in_org.append(row)
+        
+        # Распределяем сотрудников, которые ни разу не были в подразделении
+        if users_never_in_org:
+            self.logger.debug(f"Найдено {len(users_never_in_org)} сотрудников, которые ни разу не были в подразделении. Распределяем их [class: UserChangeGenerator | def: _simulate_movements]")
+            
+            for row in users_never_in_org:
+                block = row['Бизнес-блок']
+                # Находим подразделение с местом для этого блока
+                available_orgs = [
+                    org for org, blocks in initial_staff.items()
+                    if blocks.get(block, 0) > 0
+                ]
+                
+                if available_orgs:
+                    # Выбираем случайное подразделение
+                    chosen_org = self.random.choice(available_orgs)
+                    # Выбираем случайный месяц для распределения
+                    chosen_month = self.random.randint(1, self.months)
+                    
+                    try:
+                        org_row = self.org_data[self.org_data['Код подразделения'].astype(str) == chosen_org].iloc[0]
+                        row[f'Месяц_{chosen_month}_Код подразделения'] = chosen_org
+                        row[f'Месяц_{chosen_month}_Короткое ТБ'] = org_row['Короткое ТБ']
+                        row[f'Месяц_{chosen_month}_Полное ГОСБ'] = org_row['Полное ГОСБ']
+                        self.logger.debug(f"Сотрудник {row['Табельный номер']} распределен в подразделение {chosen_org} в месяц {chosen_month} [class: UserChangeGenerator | def: _simulate_movements]")
+                    except (IndexError, KeyError):
+                        # Если подразделение не найдено, пропускаем
+                        continue
+        
+        self.logger.info(f"Симуляция завершена. Обработано {len(result_data)} пользователей")
+        
+        return pd.DataFrame(result_data)
+    
+    def save_to_excel(self, df: pd.DataFrame) -> str:
+        """
+        Сохранение данных USER_CNG в Excel файл.
+        
+        Args:
+            df: DataFrame с данными изменений пользователей
+            
+        Returns:
+            Путь к созданному файлу
+        """
+        # Находим последний созданный файл с таким же базовым именем
+        existing_files = list(self.output_dir.glob(f"{self.output_file_base}_*.xlsx"))
+        
+        if existing_files:
+            excel_path = max(existing_files, key=lambda p: p.stat().st_mtime)
+            self.logger.info(f"Добавление листа USER_CNG в существующий файл: {excel_path.name}")
+            file_mode = 'a'
+        else:
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M")
+            excel_path = self.output_dir / f"{self.output_file_base}_{timestamp}.xlsx"
+            self.logger.info(f"Создание нового файла: {excel_path.name}")
+            file_mode = 'w'
+        
+        # Создаем порядок колонок (только код подразделения, короткое ТБ и полное ГОСБ)
+        column_order = ['Табельный номер', 'ФИО', 'Бизнес-блок']
+        for month in range(1, self.months + 1):
+            column_order.extend([
+                f'Месяц_{month}_Код подразделения',
+                f'Месяц_{month}_Короткое ТБ',
+                f'Месяц_{month}_Полное ГОСБ'
+            ])
+        
+        # Переупорядочиваем колонки
+        df = df[column_order]
+        
+        # Сохраняем в Excel
+        with pd.ExcelWriter(excel_path, engine='openpyxl', mode=file_mode, if_sheet_exists='replace') as writer:
+            df.to_excel(writer, sheet_name=self.sheet_name, index=False)
+            
+            # Получаем объект листа для форматирования
+            worksheet = writer.sheets[self.sheet_name]
+            
+            # Закрепляем панели согласно конфигурации
+            freeze_panes = self.config.get('freeze_panes', 'A2')
+            worksheet.freeze_panes = freeze_panes
+            
+            # Включаем автофильтр
+            worksheet.auto_filter.ref = worksheet.dimensions
+            
+            # Настраиваем ширину колонок
+            for column in worksheet.columns:
+                max_length = 0
+                column_letter = get_column_letter(column[0].column)
+                
+                for cell in column:
+                    try:
+                        if cell.value:
+                            max_length = max(max_length, len(str(cell.value)))
+                    except:
+                        pass
+                
+                adjusted_width = min(max(max_length + 2, 10), self.max_column_width)
+                worksheet.column_dimensions[column_letter].width = adjusted_width
+            
+            # Делаем первую строку жирной
+            header_font = Font(bold=True)
+            for cell in worksheet[1]:
+                cell.font = header_font
+        
+        self.logger.info(f"Файл USER_CNG успешно создан/обновлен: {excel_path.absolute()}")
+        
+        return str(excel_path.absolute())
+    
+    def process(self, gray_zone_config: Dict) -> str:
+        """
+        Полный цикл генерации изменений пользователей.
+        
+        Args:
+            gray_zone_config: Конфигурация серой зоны из USERS
+            
+        Returns:
+            Путь к созданному Excel файлу
+        """
+        self.logger.info("Начало генерации изменений пользователей")
+        
+        # Фильтруем специальных пользователей
+        filtered_users = self._filter_special_users(self.users_data, gray_zone_config)
+        
+        # Инициализация: 90% распределены, 10% без подразделения
+        n_with_org = int(len(filtered_users) * self.initial_distribution['with_org'])
+        filtered_users_shuffled = filtered_users.sample(frac=1, random_state=None).reset_index(drop=True)
+        users_with_org = filtered_users_shuffled.head(n_with_org).copy()
+        users_without_org = filtered_users_shuffled.tail(len(filtered_users_shuffled) - n_with_org).copy()
+        
+        # Для пользователей без подразделения устанавливаем "-" в колонке "Код подразделения"
+        users_without_org['Код подразделения'] = '-'
+        
+        # Получаем начальный штат только из пользователей с подразделениями
+        initial_staff = self._get_initial_staff(users_with_org)
+        
+        # Объединяем пользователей обратно для категоризации
+        all_users = pd.concat([users_with_org, users_without_org], ignore_index=True)
+        
+        # Категоризируем всех пользователей
+        categorized_users = self._categorize_users(all_users)
+        
+        # Симулируем движение
+        result_df = self._simulate_movements(categorized_users, initial_staff)
+        
+        # Сохраняем
+        output_file = self.save_to_excel(result_df)
+        
+        self.logger.info(f"Генерация изменений завершена успешно. Файл: {output_file}")
+        
+        return output_file
+
+
+def generate_user_changes(
+    config: Dict,
+    users_data: pd.DataFrame,
+    org_data: pd.DataFrame,
+    gray_zone_config: Dict,
+    output_file_base: str = "result_base",
+    output_dir: str = "OUT",
+    logger: Optional[logging.Logger] = None
+) -> str:
+    """
+    Функция для генерации изменений пользователей.
+    
+    Args:
+        config: Словарь конфигурации из LOADER_CONFIG['USER_CNG']
+        users_data: DataFrame с данными пользователей (из листа USERS)
+        org_data: DataFrame с данными организационных единиц (из листа ORG)
+        gray_zone_config: Конфигурация серой зоны из USERS
+        output_file_base: Базовое имя выходного Excel файла
+        output_dir: Директория для выходных файлов
+        logger: Логгер для записи событий
+        
+    Returns:
+        Путь к созданному Excel файлу
+    """
+    generator = UserChangeGenerator(
+        config=config,
+        users_data=users_data,
+        org_data=org_data,
+        output_file_base=output_file_base,
+        output_dir=output_dir,
+        logger=logger
+    )
+    return generator.process(gray_zone_config)
+
+
+class ClientGenerator:
+    """
+    Класс для генерации клиентов (организаций).
+    
+    Генерирует организации с уникальными ИНН и наименованиями.
+    """
+    
+    def __init__(
+        self,
+        config: Dict,
+        output_file_base: str,
+        output_dir: str = "OUT",
+        logger: Optional[logging.Logger] = None
+    ) -> None:
+        """
+        Инициализация генератора клиентов.
+        
+        Args:
+            config: Словарь конфигурации из LOADER_CONFIG['CLIENTS']
+            output_file_base: Базовое имя выходного Excel файла
+            output_dir: Директория для выходных файлов
+            logger: Логгер для записи событий
+        """
+        self.config = config
+        self.output_file_base = output_file_base
+        self.output_dir = Path(output_dir)
+        self.output_dir.mkdir(exist_ok=True)
+        self.logger = logger or logging.getLogger(__name__)
+        
+        # Настройки Excel
+        self.sheet_name = config['sheet_name']
+        self.max_column_width = config.get('max_column_width', 100)
+        
+        # Параметры генерации
+        self.count = config['count']
+        self.columns = config['columns']
+        self.inn_config = config['inn']
+        self.legal_forms = config['legal_forms']
+        self.org_type_distribution = config['org_type_distribution']
+        self.company_names = config['company_names']
+        self.name_prefixes = config['name_prefixes']
+        self.name_suffixes = config['name_suffixes']
+        self.ip_surnames = config['ip_surnames']
+        self.ip_initials = config['ip_initials']
+        
+        # Импортируем random для генерации случайных значений
+        import random
+        self.random = random
+        
+        # Множества для отслеживания уникальности
+        self.used_inns = set()
+        self.used_names = set()
+    
+    def _generate_inn(self, is_ip: bool) -> str:
+        """
+        Генерация уникального ИНН.
+        
+        Args:
+            is_ip: True если ИП, False если организация
+            
+        Returns:
+            Уникальный ИНН (строка)
+        """
+        max_attempts = 10000
+        attempt = 0
+        
+        while attempt < max_attempts:
+            if is_ip:
+                # ИП: 12 знаков
+                inn = str(self.random.randint(100000000000, 999999999999))
+            else:
+                # Организация: 10 знаков, потом дополняем до 12 нулями
+                inn_10 = str(self.random.randint(1000000000, 9999999999))
+                inn = inn_10.zfill(self.inn_config['total_length'])
+            
+            if inn not in self.used_inns:
+                self.used_inns.add(inn)
+                return inn
+            
+            attempt += 1
+        
+        # Если не удалось сгенерировать уникальный ИНН за max_attempts попыток
+        raise ValueError(f"Не удалось сгенерировать уникальный ИНН после {max_attempts} попыток")
+    
+    def _generate_company_name(self, is_ip: bool, attempt_number: int = 0) -> str:
+        """
+        Генерация уникального наименования организации.
+        
+        Args:
+            is_ip: True если ИП, False если организация
+            attempt_number: Номер попытки (для добавления уникальности при необходимости)
+            
+        Returns:
+            Уникальное наименование (строка)
+        """
+        max_attempts = 1000
+        attempt = 0
+        
+        while attempt < max_attempts:
+            if is_ip:
+                # ИП: "ИП Фамилия И.О." или "ИП Фамилия И.О. №N" для уникальности
+                legal_form = 'ИП'
+                surname = self.random.choice(self.ip_surnames)
+                initials = self.random.choice(self.ip_initials)
+                
+                # Если уже много попыток, добавляем номер для уникальности
+                if attempt_number > 0 and attempt > 100:
+                    name = f"{legal_form} {surname} {initials} №{attempt_number}"
+                else:
+                    name = f"{legal_form} {surname} {initials}"
+            else:
+                # Организация: "ОПФ [приставка] Название [суффикс] [номер]"
+                legal_form = self.random.choice([f for f in self.legal_forms if f != 'ИП'])
+                company_name = self.random.choice(self.company_names)
+                
+                # Случайно добавляем приставку (50% вероятность)
+                if self.random.random() < 0.5:
+                    prefix = self.random.choice(self.name_prefixes)
+                    company_name = f"{prefix} {company_name}"
+                
+                # Случайно добавляем суффикс (30% вероятность)
+                if self.random.random() < 0.3:
+                    suffix = self.random.choice(self.name_suffixes)
+                    company_name = f"{company_name} {suffix}"
+                
+                # Если уже много попыток, добавляем номер для уникальности
+                if attempt_number > 0 and attempt > 100:
+                    company_name = f"{company_name} №{attempt_number}"
+                
+                name = f"{legal_form} \"{company_name}\""
+            
+            if name not in self.used_names:
+                self.used_names.add(name)
+                return name
+            
+            attempt += 1
+        
+        # Если не удалось сгенерировать уникальное наименование, добавляем уникальный номер
+        if is_ip:
+            legal_form = 'ИП'
+            surname = self.random.choice(self.ip_surnames)
+            initials = self.random.choice(self.ip_initials)
+            name = f"{legal_form} {surname} {initials} №{attempt_number}_{self.random.randint(1000, 9999)}"
+        else:
+            legal_form = self.random.choice([f for f in self.legal_forms if f != 'ИП'])
+            company_name = self.random.choice(self.company_names)
+            if self.random.random() < 0.5:
+                prefix = self.random.choice(self.name_prefixes)
+                company_name = f"{prefix} {company_name}"
+            if self.random.random() < 0.3:
+                suffix = self.random.choice(self.name_suffixes)
+                company_name = f"{company_name} {suffix}"
+            name = f"{legal_form} \"{company_name} №{attempt_number}_{self.random.randint(1000, 9999)}\""
+        
+        # Проверяем уникальность еще раз
+        if name not in self.used_names:
+            self.used_names.add(name)
+            return name
+        
+        # В крайнем случае добавляем timestamp
+        import time
+        unique_suffix = int(time.time() * 1000000) % 1000000
+        if is_ip:
+            name = f"{legal_form} {surname} {initials} №{unique_suffix}"
+        else:
+            name = f"{legal_form} \"{company_name} №{unique_suffix}\""
+        
+        self.used_names.add(name)
+        return name
+    
+    def _generate_clients(self) -> List[Dict]:
+        """
+        Генерация списка клиентов.
+        
+        Returns:
+            Список словарей с данными клиентов
+        """
+        self.logger.info(f"Начало генерации {self.count} клиентов")
+        
+        clients = []
+        n_ip = int(self.count * self.org_type_distribution['ip'])
+        n_org = self.count - n_ip
+        
+        self.logger.debug(f"Генерация: {n_ip} ИП и {n_org} организаций [class: ClientGenerator | def: _generate_clients]")
+        
+        # Генерируем ИП
+        for i in range(n_ip):
+            inn = self._generate_inn(is_ip=True)
+            name = self._generate_company_name(is_ip=True, attempt_number=i)
+            
+            clients.append({
+                self.columns['inn']: inn,
+                self.columns['name']: name
+            })
+            
+            if (i + 1) % 1000 == 0:
+                self.logger.debug(f"Сгенерировано {i + 1} ИП [class: ClientGenerator | def: _generate_clients]")
+        
+        # Генерируем организации
+        for i in range(n_org):
+            inn = self._generate_inn(is_ip=False)
+            name = self._generate_company_name(is_ip=False, attempt_number=i)
+            
+            clients.append({
+                self.columns['inn']: inn,
+                self.columns['name']: name
+            })
+            
+            if (i + 1) % 1000 == 0:
+                self.logger.debug(f"Сгенерировано {i + 1} организаций [class: ClientGenerator | def: _generate_clients]")
+        
+        # Перемешиваем для случайного порядка
+        self.random.shuffle(clients)
+        
+        self.logger.info(f"Генерация завершена. Создано {len(clients)} клиентов")
+        
+        return clients
+    
+    def save_to_excel(self, clients: List[Dict]) -> str:
+        """
+        Сохранение данных клиентов в Excel файл.
+        
+        Args:
+            clients: Список словарей с данными клиентов
+            
+        Returns:
+            Путь к созданному файлу
+        """
+        # Находим последний созданный файл с таким же базовым именем
+        existing_files = list(self.output_dir.glob(f"{self.output_file_base}_*.xlsx"))
+        
+        if existing_files:
+            excel_path = max(existing_files, key=lambda p: p.stat().st_mtime)
+            self.logger.info(f"Добавление листа CLIENTS в существующий файл: {excel_path.name}")
+            file_mode = 'a'
+        else:
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M")
+            excel_path = self.output_dir / f"{self.output_file_base}_{timestamp}.xlsx"
+            self.logger.info(f"Создание нового файла: {excel_path.name}")
+            file_mode = 'w'
+        
+        # Создаем DataFrame
+        df = pd.DataFrame(clients)
+        
+        # Убеждаемся, что ИНН сохранен как текст (с лидирующими нулями)
+        df[self.columns['inn']] = df[self.columns['inn']].astype(str)
+        
+        # Сохраняем в Excel
+        with pd.ExcelWriter(excel_path, engine='openpyxl', mode=file_mode, if_sheet_exists='replace') as writer:
+            df.to_excel(writer, sheet_name=self.sheet_name, index=False)
+            
+            # Получаем объект листа для форматирования
+            worksheet = writer.sheets[self.sheet_name]
+            
+            # Устанавливаем формат текста для колонки ИНН (чтобы сохранить лидирующие нули)
+            inn_col_idx = list(df.columns).index(self.columns['inn']) + 1  # +1 т.к. Excel считает с 1
+            inn_col_letter = get_column_letter(inn_col_idx)
+            
+            # Применяем текстовый формат ко всем ячейкам колонки (кроме заголовка)
+            for row in range(2, len(df) + 2):  # Начинаем с 2 (пропускаем заголовок)
+                cell = worksheet[f'{inn_col_letter}{row}']
+                cell.number_format = '@'  # Текстовый формат
+                # Убеждаемся, что значение записано как строка
+                if isinstance(cell.value, (int, float)):
+                    cell.value = str(int(cell.value)).zfill(self.inn_config['total_length'])
+                elif isinstance(cell.value, str):
+                    # Если уже строка, проверяем длину и добавляем нули если нужно
+                    cell.value = cell.value.zfill(self.inn_config['total_length'])
+            
+            # Закрепляем панели согласно конфигурации
+            freeze_panes = self.config.get('freeze_panes', 'A2')
+            worksheet.freeze_panes = freeze_panes
+            
+            # Включаем автофильтр
+            worksheet.auto_filter.ref = worksheet.dimensions
+            
+            # Настраиваем ширину колонок
+            for column in worksheet.columns:
+                max_length = 0
+                column_letter = get_column_letter(column[0].column)
+                
+                for cell in column:
+                    try:
+                        if cell.value:
+                            max_length = max(max_length, len(str(cell.value)))
+                    except:
+                        pass
+                
+                adjusted_width = min(max(max_length + 2, 10), self.max_column_width)
+                worksheet.column_dimensions[column_letter].width = adjusted_width
+            
+            # Делаем первую строку жирной
+            header_font = Font(bold=True)
+            for cell in worksheet[1]:
+                cell.font = header_font
+        
+        self.logger.info(f"Файл CLIENTS успешно создан/обновлен: {excel_path.absolute()}")
+        
+        return str(excel_path.absolute())
+    
+    def process(self) -> str:
+        """
+        Полный цикл генерации клиентов.
+        
+        Returns:
+            Путь к созданному Excel файлу
+        """
+        self.logger.info("Начало генерации клиентов")
+        
+        # Генерируем клиентов
+        clients = self._generate_clients()
+        
+        # Сохраняем
+        output_file = self.save_to_excel(clients)
+        
+        self.logger.info(f"Генерация клиентов завершена успешно. Файл: {output_file}")
+        
+        return output_file
+
+
+def generate_clients(
+    config: Dict,
+    output_file_base: str = "result_base",
+    output_dir: str = "OUT",
+    logger: Optional[logging.Logger] = None
+) -> str:
+    """
+    Функция для генерации клиентов.
+    
+    Args:
+        config: Словарь конфигурации из LOADER_CONFIG['CLIENTS']
+        output_file_base: Базовое имя выходного Excel файла
+        output_dir: Директория для выходных файлов
+        logger: Логгер для записи событий
+        
+    Returns:
+        Путь к созданному Excel файлу
+    """
+    generator = ClientGenerator(
+        config=config,
+        output_file_base=output_file_base,
+        output_dir=output_dir,
+        logger=logger
+    )
+    return generator.process()
+
+
+class ClientChangeGenerator:
+    """
+    Класс для генерации таблицы изменений клиентов (CLIENT_CNG).
+    
+    Генерирует таблицу движения клиентов между менеджерами в течение 12 месяцев.
+    """
+    
+    def __init__(
+        self,
+        config: Dict,
+        clients_data: pd.DataFrame,
+        user_cng_data: pd.DataFrame,
+        output_file_base: str,
+        output_dir: str = "OUT",
+        logger: Optional[logging.Logger] = None
+    ) -> None:
+        """
+        Инициализация генератора изменений клиентов.
+        
+        Args:
+            config: Словарь конфигурации из LOADER_CONFIG['CLIENT_CNG']
+            clients_data: DataFrame с данными клиентов (из листа CLIENTS)
+            user_cng_data: DataFrame с данными изменений пользователей (из листа USER_CNG)
+            output_file_base: Базовое имя выходного Excel файла
+            output_dir: Директория для выходных файлов
+            logger: Логгер для записи событий
+        """
+        self.config = config
+        self.clients_data = clients_data
+        self.user_cng_data = user_cng_data
+        self.output_file_base = output_file_base
+        self.output_dir = Path(output_dir)
+        self.output_dir.mkdir(exist_ok=True)
+        self.logger = logger or logging.getLogger(__name__)
+        
+        # Настройки Excel
+        self.sheet_name = config['sheet_name']
+        self.max_column_width = config.get('max_column_width', 100)
+        
+        # Параметры движения из конфигурации
+        movement_config = config['movement']
+        self.months = movement_config['months']
+        self.initial_distribution = movement_config['initial_distribution']
+        self.categories = movement_config['categories']
+        self.can_disappear = movement_config['can_disappear']
+        self.business_block = config['business_block']
+        
+        # Импортируем random для генерации случайных значений
+        import random
+        self.random = random
+    
+    def _get_km_managers(self) -> pd.DataFrame:
+        """
+        Получение списка менеджеров из блока KMKKSB из USER_CNG.
+        
+        Returns:
+            DataFrame с менеджерами блока KMKKSB
+        """
+        # Фильтруем только менеджеров из нужного блока
+        km_managers = self.user_cng_data[self.user_cng_data['Бизнес-блок'] == self.business_block].copy()
+        
+        # Получаем уникальные табельные номера
+        unique_tab_numbers = km_managers['Табельный номер'].unique()
+        
+        self.logger.debug(f"Найдено {len(unique_tab_numbers)} менеджеров блока {self.business_block} [class: ClientChangeGenerator | def: _get_km_managers]")
+        
+        return km_managers
+    
+    def _get_manager_info(self, tab_number: str, month: int) -> Dict:
+        """
+        Получение информации о менеджере в указанный месяц из USER_CNG.
+        
+        Args:
+            tab_number: Табельный номер менеджера (может быть строкой или числом)
+            month: Номер месяца (1-12)
+            
+        Returns:
+            Словарь с информацией о менеджере или None если менеджер не найден
+        """
+        # Преобразуем табельный номер в строку для сравнения
+        tab_number_str = str(tab_number)
+        
+        # Находим строку с этим табельным номером
+        # Сравниваем как строки, так как в USER_CNG табельный может быть строкой
+        manager_row = self.user_cng_data[
+            self.user_cng_data['Табельный номер'].astype(str) == tab_number_str
+        ]
+        
+        if len(manager_row) == 0:
+            self.logger.debug(f"Менеджер с табельным {tab_number_str} не найден в USER_CNG [class: ClientChangeGenerator | def: _get_manager_info]")
+            return None
+        
+        manager_row = manager_row.iloc[0]
+        
+        # Получаем данные за указанный месяц
+        org_code = manager_row.get(f'Месяц_{month}_Код подразделения', '-')
+        
+        # Если менеджер без подразделения в этом месяце
+        if org_code == '-' or pd.isna(org_code) or str(org_code).strip() == '':
+            return {
+                'Табельный номер': '-',
+                'ФИО': '-',
+                'Код подразделения': '-',
+                'Короткое ТБ': '-',
+                'Полное ГОСБ': '-'
+            }
+        
+        # Получаем остальные данные
+        short_tb = manager_row.get(f'Месяц_{month}_Короткое ТБ', '-')
+        full_gosb = manager_row.get(f'Месяц_{month}_Полное ГОСБ', '-')
+        
+        # Форматируем табельный номер с лидирующими нулями
+        tab_number_formatted = str(tab_number_str).zfill(self.config.get('formats', {}).get('tab_number_length', 8))
+        
+        return {
+            'Табельный номер': tab_number_formatted,
+            'ФИО': str(manager_row['ФИО']),
+            'Код подразделения': str(org_code),
+            'Короткое ТБ': str(short_tb),
+            'Полное ГОСБ': str(full_gosb)
+        }
+    
+    def _get_available_managers(self, month: int, current_tb: str = None, current_gosb: str = None) -> List[str]:
+        """
+        Получение списка доступных менеджеров в указанный месяц.
+        
+        Args:
+            month: Номер месяца (1-12)
+            current_tb: Текущее ТБ (для ограничения изменения только ГОСБ - остаются в том же ТБ)
+            current_gosb: Текущее ГОСБ (для ограничения изменения только ГОСБ - остаются в том же ГОСБ)
+            
+        Returns:
+            Список табельных номеров доступных менеджеров
+        """
+        available = []
+        
+        # Получаем уникальные табельные номера менеджеров из нужного блока
+        # Проверяем наличие колонки 'Бизнес-блок'
+        if 'Бизнес-блок' not in self.user_cng_data.columns:
+            self.logger.warning(f"Колонка 'Бизнес-блок' не найдена в USER_CNG. Доступные колонки: {list(self.user_cng_data.columns)} [class: ClientChangeGenerator | def: _get_available_managers]")
+            # Если нет колонки бизнес-блока, берем всех менеджеров
+            km_data = self.user_cng_data
+        else:
+            # Фильтруем по бизнес-блоку (сравниваем как строки)
+            # Убираем пробелы и приводим к верхнему регистру для надежности
+            business_block_normalized = str(self.business_block).strip().upper()
+            km_data = self.user_cng_data[
+                self.user_cng_data['Бизнес-блок'].astype(str).str.strip().str.upper() == business_block_normalized
+            ]
+            
+            # Логируем для диагностики
+            if len(km_data) == 0:
+                unique_blocks = self.user_cng_data['Бизнес-блок'].astype(str).unique()
+                self.logger.debug(f"Ищем блок '{self.business_block}' (нормализованный: '{business_block_normalized}'), найдено уникальных блоков: {unique_blocks} [class: ClientChangeGenerator | def: _get_available_managers]")
+        
+        if len(km_data) == 0:
+            self.logger.warning(f"Не найдено менеджеров блока {self.business_block} в USER_CNG. Всего строк в USER_CNG: {len(self.user_cng_data)} [class: ClientChangeGenerator | def: _get_available_managers]")
+            # Если не нашли по блоку, пробуем взять всех менеджеров
+            if 'Бизнес-блок' in self.user_cng_data.columns:
+                unique_blocks = self.user_cng_data['Бизнес-блок'].astype(str).unique()
+                self.logger.debug(f"Уникальные бизнес-блоки в USER_CNG: {unique_blocks}. Используем всех менеджеров. [class: ClientChangeGenerator | def: _get_available_managers]")
+                km_data = self.user_cng_data
+        
+        if len(km_data) == 0:
+            return []
+        
+        unique_tab_numbers = km_data['Табельный номер'].unique()
+        
+        for tab_number in unique_tab_numbers:
+            manager_info = self._get_manager_info(tab_number, month)
+            
+            if manager_info is None:
+                continue
+            
+            # Пропускаем менеджеров без подразделения
+            if manager_info['Код подразделения'] == '-' or manager_info['Код подразделения'] == '':
+                continue
+            
+            # Если нужно ограничение по ТБ (для change_tb_only - остаются в том же ТБ)
+            if current_tb is not None and manager_info['Короткое ТБ'] != current_tb:
+                continue
+            
+            # Если нужно ограничение по ГОСБ (для change_gosb_only - остаются в том же ГОСБ)
+            if current_gosb is not None and manager_info['Полное ГОСБ'] != current_gosb:
+                continue
+            
+            available.append(str(tab_number))
+        
+        return available
+    
+    def _categorize_clients(self, clients_df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Категоризация клиентов по типам движения.
+        
+        Args:
+            clients_df: DataFrame с клиентами
+            
+        Returns:
+            DataFrame с добавленной колонкой 'category'
+        """
+        df = clients_df.copy()
+        n = len(df)
+        
+        # Определяем количество клиентов в каждой категории
+        n_no_change = int(n * self.categories['no_change'])
+        n_change_gosb = int(n * self.categories['change_gosb_only'])
+        n_change_tb = int(n * self.categories['change_tb_only'])
+        n_change_tb_gosb = int(n * self.categories['change_tb_gosb'])
+        n_can_remove = int(n * self.categories['can_remove'])
+        
+        # Создаем список категорий
+        categories = (
+            ['no_change'] * n_no_change +
+            ['change_gosb_only'] * n_change_gosb +
+            ['change_tb_only'] * n_change_tb +
+            ['change_tb_gosb'] * n_change_tb_gosb +
+            ['can_remove'] * n_can_remove +
+            ['new_client'] * (n - n_no_change - n_change_gosb - n_change_tb - n_change_tb_gosb - n_can_remove)
+        )
+        
+        # Перемешиваем и присваиваем
+        self.random.shuffle(categories)
+        df['category'] = categories
+        
+        self.logger.debug(f"Категоризация клиентов: no_change={n_no_change}, change_gosb={n_change_gosb}, change_tb={n_change_tb}, change_tb_gosb={n_change_tb_gosb}, can_remove={n_can_remove}, new={n - n_no_change - n_change_gosb - n_change_tb - n_change_tb_gosb - n_can_remove} [class: ClientChangeGenerator | def: _categorize_clients]")
+        
+        return df
+    
+    def _prepare_clients_with_multiple_rows(self, clients_df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Подготовка клиентов с несколькими строками (один ИНН в разных ТБ).
+        
+        Args:
+            clients_df: DataFrame с клиентами
+            
+        Returns:
+            DataFrame с добавленными строками для клиентов с несколькими менеджерами
+        """
+        multiple_rows_config = self.config.get('multiple_rows', {})
+        percentage = multiple_rows_config.get('percentage', 0.05)
+        max_repeats = multiple_rows_config.get('max_repeats', 10)
+        
+        # Определяем клиентов, которые будут иметь несколько строк
+        n_multiple = int(len(clients_df) * percentage)
+        clients_shuffled = clients_df.sample(frac=1, random_state=None).reset_index(drop=True)
+        clients_multiple = clients_shuffled.head(n_multiple)
+        clients_single = clients_shuffled.tail(len(clients_shuffled) - n_multiple)
+        
+        # Для клиентов с несколькими строками определяем количество повторов (от 0 до max_repeats)
+        expanded_clients = []
+        
+        # Добавляем клиентов с одной строкой
+        for _, client in clients_single.iterrows():
+            expanded_clients.append(client.to_dict())
+        
+        # Добавляем клиентов с несколькими строками
+        for _, client in clients_multiple.iterrows():
+            # Количество дополнительных строк (от 0 до max_repeats)
+            n_repeats = self.random.randint(0, max_repeats)
+            
+            # Добавляем основную строку
+            expanded_clients.append(client.to_dict())
+            
+            # Добавляем дополнительные строки
+            for _ in range(n_repeats):
+                expanded_clients.append(client.to_dict())
+        
+        self.logger.debug(f"Подготовлено клиентов: {len(clients_df)} исходных, {len(expanded_clients)} после добавления повторов [class: ClientChangeGenerator | def: _prepare_clients_with_multiple_rows]")
+        
+        return pd.DataFrame(expanded_clients)
+    
+    def _preload_managers_data(self) -> Dict:
+        """
+        Предзагрузка данных о менеджерах для всех месяцев для оптимизации.
+        
+        Returns:
+            Словарь с данными: {month: {tab_number: manager_info, ...}, ...}
+        """
+        self.logger.debug("Предзагрузка данных о менеджерах для всех месяцев [class: ClientChangeGenerator | def: _preload_managers_data]")
+        
+        managers_data = {}
+        
+        # Получаем всех менеджеров нужного блока
+        if 'Бизнес-блок' not in self.user_cng_data.columns:
+            km_data = self.user_cng_data
+        else:
+            business_block_normalized = str(self.business_block).strip().upper()
+            km_data = self.user_cng_data[
+                self.user_cng_data['Бизнес-блок'].astype(str).str.strip().str.upper() == business_block_normalized
+            ]
+            if len(km_data) == 0:
+                km_data = self.user_cng_data
+        
+        unique_tab_numbers = km_data['Табельный номер'].unique()
+        
+        # Предзагружаем информацию о каждом менеджере для каждого месяца
+        for month in range(1, self.months + 1):
+            managers_data[month] = {}
+            for tab_number in unique_tab_numbers:
+                manager_info = self._get_manager_info(tab_number, month)
+                if manager_info and manager_info['Код подразделения'] != '-':
+                    managers_data[month][str(tab_number)] = manager_info
+        
+        self.logger.debug(f"Предзагружено данных для {len(unique_tab_numbers)} менеджеров на {self.months} месяцев [class: ClientChangeGenerator | def: _preload_managers_data]")
+        
+        return managers_data
+    
+    def _get_available_managers_from_cache(self, month: int, managers_cache: Dict, current_tb: str = None, current_gosb: str = None) -> List[str]:
+        """
+        Получение списка доступных менеджеров из кэша.
+        
+        Args:
+            month: Номер месяца (1-12)
+            managers_cache: Кэш с данными менеджеров
+            current_tb: Текущее ТБ (для ограничения)
+            current_gosb: Текущее ГОСБ (для ограничения)
+            
+        Returns:
+            Список табельных номеров доступных менеджеров
+        """
+        if month not in managers_cache:
+            return []
+        
+        available = []
+        for tab_number, manager_info in managers_cache[month].items():
+            # Если нужно ограничение по ТБ
+            if current_tb is not None and manager_info['Короткое ТБ'] != current_tb:
+                continue
+            
+            # Если нужно ограничение по ГОСБ
+            if current_gosb is not None and manager_info['Полное ГОСБ'] != current_gosb:
+                continue
+            
+            available.append(tab_number)
+        
+        return available
+    
+    def _simulate_client_movements(self, clients_df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Симуляция движения клиентов между менеджерами по месяцам.
+        
+        Args:
+            clients_df: DataFrame с клиентами
+            
+        Returns:
+            DataFrame с данными для CLIENT_CNG
+        """
+        self.logger.info("Начало симуляции движения клиентов")
+        
+        # Подготавливаем клиентов с несколькими строками
+        clients_df = self._prepare_clients_with_multiple_rows(clients_df)
+        
+        # Предзагружаем данные о менеджерах для всех месяцев (оптимизация)
+        managers_cache = self._preload_managers_data()
+        
+        result_data = []
+        
+        # Получаем форматы
+        formats_config = self.config.get('formats', {})
+        inn_length = formats_config.get('inn_length', 12)
+        tab_number_length = formats_config.get('tab_number_length', 8)
+        
+        # Инициализация: 85% с менеджером, 15% без менеджера в 1 месяц
+        n_with_manager = int(len(clients_df) * self.initial_distribution['with_manager'])
+        clients_shuffled = clients_df.sample(frac=1, random_state=None).reset_index(drop=True)
+        clients_with_manager = clients_shuffled.head(n_with_manager)
+        clients_without_manager = clients_shuffled.tail(len(clients_shuffled) - n_with_manager)
+        
+        # Словари для отслеживания состояния клиентов (по строке, не по ИНН)
+        client_current_manager = {}  # Ключ: индекс строки
+        client_appeared = {}  # Когда клиент появился (получил менеджера)
+        client_disappeared = set()  # Индексы строк клиентов, которые пропали
+        
+        # Инициализируем клиентов с менеджерами
+        available_managers_month1 = self._get_available_managers_from_cache(1, managers_cache)
+        
+        if len(available_managers_month1) == 0:
+            self.logger.warning(f"Не найдено доступных менеджеров в 1 месяц [class: ClientChangeGenerator | def: _simulate_client_movements]")
+        
+        for idx, (_, client) in enumerate(clients_with_manager.iterrows()):
+            inn = str(client['ИНН']).zfill(inn_length)
+            if available_managers_month1:
+                manager_tab = self.random.choice(available_managers_month1)
+                client_current_manager[idx] = manager_tab
+                client_appeared[idx] = 1
+            else:
+                client_current_manager[idx] = None
+                client_appeared[idx] = None
+        
+        # Инициализируем клиентов без менеджеров
+        for idx, (_, client) in enumerate(clients_without_manager.iterrows(), start=len(clients_with_manager)):
+            inn = str(client['ИНН']).zfill(inn_length)
+            client_current_manager[idx] = None
+            client_appeared[idx] = None
+        
+        # Симулируем каждый месяц
+        for month in range(1, self.months + 1):
+            self.logger.debug(f"Симуляция месяца {month} [class: ClientChangeGenerator | def: _simulate_client_movements]")
+            
+            # Используем кэш вместо повторных вызовов
+            available_managers = self._get_available_managers_from_cache(month, managers_cache)
+            
+            if len(available_managers) == 0:
+                self.logger.warning(f"Не найдено доступных менеджеров в месяц {month} [class: ClientChangeGenerator | def: _simulate_client_movements]")
+            
+            for idx, (_, client) in enumerate(clients_df.iterrows()):
+                inn = str(client['ИНН']).zfill(inn_length)
+                category = client['category']
+                current_manager = client_current_manager.get(idx)
+                
+                # Если клиент пропал - остается пропавшим
+                if idx in client_disappeared:
+                    manager_info = {
+                        'Табельный номер': '-',
+                        'ФИО': '-',
+                        'Код подразделения': '-',
+                        'Короткое ТБ': '-',
+                        'Полное ГОСБ': '-'
+                    }
+                # Если клиент без менеджера (новый клиент)
+                elif current_manager is None:
+                    # Может появиться в этом месяце (вероятность)
+                    if self.random.random() < 0.1:  # 10% вероятность появления в месяц
+                        if available_managers:
+                            new_manager = self.random.choice(available_managers)
+                            client_current_manager[idx] = new_manager
+                            client_appeared[idx] = month
+                            manager_info = managers_cache.get(month, {}).get(new_manager, {
+                                'Табельный номер': '-',
+                                'ФИО': '-',
+                                'Код подразделения': '-',
+                                'Короткое ТБ': '-',
+                                'Полное ГОСБ': '-'
+                            })
+                        else:
+                            manager_info = {
+                                'Табельный номер': '-',
+                                'ФИО': '-',
+                                'Код подразделения': '-',
+                                'Короткое ТБ': '-',
+                                'Полное ГОСБ': '-'
+                            }
+                    else:
+                        manager_info = {
+                            'Табельный номер': '-',
+                            'ФИО': '-',
+                            'Код подразделения': '-',
+                            'Короткое ТБ': '-',
+                            'Полное ГОСБ': '-'
+                        }
+                # Если клиент с менеджером
+                else:
+                    # Используем кэш вместо вызова _get_manager_info
+                    current_info = managers_cache.get(month, {}).get(str(current_manager))
+                    
+                    # Если текущий менеджер без подразделения в этом месяце или не найден
+                    if current_info is None or current_info.get('Код подразделения') == '-':
+                        # Ищем другого менеджера
+                        if available_managers:
+                            new_manager = self.random.choice(available_managers)
+                            client_current_manager[idx] = new_manager
+                            manager_info = managers_cache.get(month, {}).get(new_manager, {
+                                'Табельный номер': '-',
+                                'ФИО': '-',
+                                'Код подразделения': '-',
+                                'Короткое ТБ': '-',
+                                'Полное ГОСБ': '-'
+                            })
+                        else:
+                            manager_info = {
+                                'Табельный номер': '-',
+                                'ФИО': '-',
+                                'Код подразделения': '-',
+                                'Короткое ТБ': '-',
+                                'Полное ГОСБ': '-'
+                            }
+                    else:
+                        # Проверяем категорию и возможность изменения
+                        # Если клиент появился (получил менеджера), то нельзя убрать менеджера (кроме пропадания)
+                        appeared = client_appeared.get(idx) is not None
+                        
+                        # Пропадание клиента (5% могут пропасть) - только если еще не пропал
+                        if idx not in client_disappeared and self.random.random() < self.can_disappear / self.months:
+                            # Проверяем, может ли этот клиент пропасть (5% от всех)
+                            if category == 'can_remove' or self.random.random() < self.can_disappear:
+                                client_disappeared.add(idx)
+                                client_current_manager[idx] = None
+                                manager_info = {
+                                    'Табельный номер': '-',
+                                    'ФИО': '-',
+                                    'Код подразделения': '-',
+                                    'Короткое ТБ': '-',
+                                    'Полное ГОСБ': '-'
+                                }
+                            else:
+                                # Не пропадает - остается с текущим менеджером
+                                manager_info = current_info
+                        # Удаление менеджера (10% могут убрать табельный) - только если категория can_remove
+                        elif category == 'can_remove' and appeared and self.random.random() < 0.1 / self.months:
+                            # Может убрать менеджера, но не пропасть
+                            client_current_manager[idx] = None
+                            manager_info = {
+                                'Табельный номер': '-',
+                                'ФИО': '-',
+                                'Код подразделения': '-',
+                                'Короткое ТБ': '-',
+                                'Полное ГОСБ': '-'
+                            }
+                        # Изменение менеджера (только если категория позволяет)
+                        elif category != 'no_change' and category != 'can_remove' and self.random.random() < 0.1:  # 10% вероятность изменения в месяц
+                            current_tb = current_info['Короткое ТБ']
+                            current_gosb = current_info['Полное ГОСБ']
+                            
+                            # Получаем доступных менеджеров из кэша
+                            if category == 'change_gosb_only':
+                                # Меняют менеджера, но остаются в том же ГОСБ (то же ГОСБ, но может быть другое ТБ)
+                                available = self._get_available_managers_from_cache(month, managers_cache, current_gosb=current_gosb)
+                            elif category == 'change_tb_only':
+                                # Меняют менеджера, но остаются в том же ТБ (то же ТБ, но может быть другое ГОСБ)
+                                available = self._get_available_managers_from_cache(month, managers_cache, current_tb=current_tb)
+                            elif category == 'change_tb_gosb':
+                                # Могут менять и ТБ и ГОСБ
+                                available = self._get_available_managers_from_cache(month, managers_cache)
+                            else:
+                                available = []
+                            
+                            # Исключаем текущего менеджера
+                            available = [m for m in available if str(m) != str(current_manager)]
+                            
+                            if available:
+                                new_manager = self.random.choice(available)
+                                client_current_manager[idx] = new_manager
+                                manager_info = managers_cache.get(month, {}).get(new_manager, {
+                                    'Табельный номер': '-',
+                                    'ФИО': '-',
+                                    'Код подразделения': '-',
+                                    'Короткое ТБ': '-',
+                                    'Полное ГОСБ': '-'
+                                })
+                            else:
+                                # Нет доступных менеджеров - остается с текущим
+                                manager_info = current_info
+                        else:
+                            # Остается с текущим менеджером
+                            manager_info = current_info
+                
+                # Сохраняем данные для этого месяца
+                if month == 1:
+                    # Первый месяц - создаем запись
+                    result_row = {
+                        'ИНН': inn,
+                        'Наименование': client['Наименование']
+                    }
+                    result_data.append(result_row)
+                else:
+                    # Находим существующую запись по индексу (не по ИНН, т.к. ИНН может повторяться)
+                    if idx < len(result_data):
+                        result_row = result_data[idx]
+                    else:
+                        # Если индекс больше длины - создаем новую запись
+                        result_row = {
+                            'ИНН': inn,
+                            'Наименование': client['Наименование']
+                        }
+                        result_data.append(result_row)
+                
+                # Добавляем данные месяца (форматируем табельный номер)
+                tab_number = manager_info['Табельный номер']
+                if tab_number != '-':
+                    tab_number = str(tab_number).zfill(tab_number_length)
+                
+                result_row[f'Месяц_{month}_Табельный номер'] = tab_number
+                result_row[f'Месяц_{month}_ФИО'] = manager_info['ФИО']
+                result_row[f'Месяц_{month}_Код подразделения'] = manager_info['Код подразделения']
+                result_row[f'Месяц_{month}_Короткое ТБ'] = manager_info['Короткое ТБ']
+                result_row[f'Месяц_{month}_Полное ГОСБ'] = manager_info['Полное ГОСБ']
+        
+        self.logger.info(f"Симуляция завершена. Обработано {len(result_data)} клиентов")
+        
+        return pd.DataFrame(result_data)
+    
+    def save_to_excel(self, df: pd.DataFrame) -> str:
+        """
+        Сохранение данных CLIENT_CNG в Excel файл.
+        
+        Args:
+            df: DataFrame с данными изменений клиентов
+            
+        Returns:
+            Путь к созданному файлу
+        """
+        # Находим последний созданный файл с таким же базовым именем
+        existing_files = list(self.output_dir.glob(f"{self.output_file_base}_*.xlsx"))
+        
+        if existing_files:
+            excel_path = max(existing_files, key=lambda p: p.stat().st_mtime)
+            self.logger.info(f"Добавление листа CLIENT_CNG в существующий файл: {excel_path.name}")
+            file_mode = 'a'
+        else:
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M")
+            excel_path = self.output_dir / f"{self.output_file_base}_{timestamp}.xlsx"
+            self.logger.info(f"Создание нового файла: {excel_path.name}")
+            file_mode = 'w'
+        
+        # Создаем порядок колонок
+        column_order = ['ИНН', 'Наименование']
+        for month in range(1, self.months + 1):
+            column_order.extend([
+                f'Месяц_{month}_Табельный номер',
+                f'Месяц_{month}_ФИО',
+                f'Месяц_{month}_Код подразделения',
+                f'Месяц_{month}_Короткое ТБ',
+                f'Месяц_{month}_Полное ГОСБ'
+            ])
+        
+        # Переупорядочиваем колонки
+        df = df[column_order]
+        
+        # Форматируем ИНН и табельные номера с лидирующими нулями
+        formats_config = self.config.get('formats', {})
+        inn_length = formats_config.get('inn_length', 12)
+        tab_number_length = formats_config.get('tab_number_length', 8)
+        
+        # Форматируем ИНН
+        df['ИНН'] = df['ИНН'].astype(str).apply(lambda x: x.zfill(inn_length) if x != 'nan' and str(x).strip() != '' else x)
+        
+        # Форматируем табельные номера во всех месяцах
+        for month in range(1, self.months + 1):
+            col_name = f'Месяц_{month}_Табельный номер'
+            if col_name in df.columns:
+                df[col_name] = df[col_name].astype(str).apply(
+                    lambda x: x.zfill(tab_number_length) if x != '-' and x != 'nan' and str(x).strip() != '' else '-'
+                )
+        
+        # Сохраняем в Excel
+        with pd.ExcelWriter(excel_path, engine='openpyxl', mode=file_mode, if_sheet_exists='replace') as writer:
+            df.to_excel(writer, sheet_name=self.sheet_name, index=False)
+            
+            # Получаем объект листа для форматирования
+            worksheet = writer.sheets[self.sheet_name]
+            
+            # Устанавливаем текстовый формат для колонки ИНН
+            inn_col_idx = list(df.columns).index('ИНН') + 1
+            inn_col_letter = get_column_letter(inn_col_idx)
+            for row in range(2, len(df) + 2):
+                cell = worksheet[f'{inn_col_letter}{row}']
+                cell.number_format = '@'
+                # Убеждаемся, что значение записано как строка с лидирующими нулями
+                if cell.value and str(cell.value) != 'nan' and str(cell.value).strip() != '':
+                    cell.value = str(cell.value).zfill(inn_length)
+            
+            # Устанавливаем текстовый формат для колонок табельных номеров
+            for month in range(1, self.months + 1):
+                col_name = f'Месяц_{month}_Табельный номер'
+                if col_name in df.columns:
+                    tab_col_idx = list(df.columns).index(col_name) + 1
+                    tab_col_letter = get_column_letter(tab_col_idx)
+                    for row in range(2, len(df) + 2):
+                        cell = worksheet[f'{tab_col_letter}{row}']
+                        cell.number_format = '@'
+                        # Убеждаемся, что значение записано как строка с лидирующими нулями
+                        if cell.value and str(cell.value) != '-' and str(cell.value) != 'nan' and str(cell.value).strip() != '':
+                            cell.value = str(cell.value).zfill(tab_number_length)
+            
+            # Закрепляем панели согласно конфигурации
+            freeze_panes = self.config.get('freeze_panes', 'C2')
+            worksheet.freeze_panes = freeze_panes
+            
+            # Включаем автофильтр
+            worksheet.auto_filter.ref = worksheet.dimensions
+            
+            # Настраиваем ширину колонок
+            for column in worksheet.columns:
+                max_length = 0
+                column_letter = get_column_letter(column[0].column)
+                
+                for cell in column:
+                    try:
+                        if cell.value:
+                            max_length = max(max_length, len(str(cell.value)))
+                    except:
+                        pass
+                
+                adjusted_width = min(max(max_length + 2, 10), self.max_column_width)
+                worksheet.column_dimensions[column_letter].width = adjusted_width
+            
+            # Делаем первую строку жирной
+            header_font = Font(bold=True)
+            for cell in worksheet[1]:
+                cell.font = header_font
+        
+        self.logger.info(f"Файл CLIENT_CNG успешно создан/обновлен: {excel_path.absolute()}")
+        
+        return str(excel_path.absolute())
+    
+    def process(self) -> str:
+        """
+        Полный цикл генерации изменений клиентов.
+        
+        Returns:
+            Путь к созданному Excel файлу
+        """
+        self.logger.info("Начало генерации изменений клиентов")
+        
+        # Категоризируем клиентов
+        categorized_clients = self._categorize_clients(self.clients_data)
+        
+        # Симулируем движение
+        result_df = self._simulate_client_movements(categorized_clients)
+        
+        # Сохраняем
+        output_file = self.save_to_excel(result_df)
+        
+        self.logger.info(f"Генерация изменений завершена успешно. Файл: {output_file}")
+        
+        return output_file
+
+
+def generate_client_changes(
+    config: Dict,
+    clients_data: pd.DataFrame,
+    user_cng_data: pd.DataFrame,
+    output_file_base: str = "result_base",
+    output_dir: str = "OUT",
+    logger: Optional[logging.Logger] = None
+) -> str:
+    """
+    Функция для генерации изменений клиентов.
+    
+    Args:
+        config: Словарь конфигурации из LOADER_CONFIG['CLIENT_CNG']
+        clients_data: DataFrame с данными клиентов (из листа CLIENTS)
+        user_cng_data: DataFrame с данными изменений пользователей (из листа USER_CNG)
+        output_file_base: Базовое имя выходного Excel файла
+        output_dir: Директория для выходных файлов
+        logger: Логгер для записи событий
+        
+    Returns:
+        Путь к созданному Excel файлу
+    """
+    generator = ClientChangeGenerator(
+        config=config,
+        clients_data=clients_data,
+        user_cng_data=user_cng_data,
+        output_file_base=output_file_base,
+        output_dir=output_dir,
+        logger=logger
+    )
+    return generator.process()
+
+
+# ============================================================================
+# ГЕНЕРАТОР ЛИСТОВ С ФАКТАМИ (UP И DIF)
+# ============================================================================
+
+class FactSheetGenerator:
+    """
+    Класс для генерации листов с фактами (UP - нарастающие, DIF - дифференциальные).
+    
+    Генерирует отдельные Excel файлы для каждого запрошенного месяца с данными клиентов
+    и их фактами (суммами), а также данными клиентских менеджеров из USER_CNG.
+    """
+    
+    def __init__(
+        self,
+        config: Dict,
+        client_cng_data: pd.DataFrame,
+        user_cng_data: pd.DataFrame,
+        output_dir: str = "OUT",
+        logger: Optional[logging.Logger] = None
+    ) -> None:
+        """
+        Инициализация генератора листов с фактами.
+        
+        Args:
+            config: Словарь конфигурации из LOADER_CONFIG['FACT_SHEETS']
+            client_cng_data: DataFrame с данными изменений клиентов (из листа CLIENT_CNG)
+            user_cng_data: DataFrame с данными изменений пользователей (из листа USER_CNG)
+            output_dir: Директория для выходных файлов
+            logger: Логгер для записи событий
+        """
+        self.config = config
+        self.client_cng_data = client_cng_data
+        self.user_cng_data = user_cng_data
+        self.output_dir = Path(output_dir)
+        self.output_dir.mkdir(exist_ok=True)
+        self.logger = logger or logging.getLogger(__name__)
+        
+        # Настройки Excel
+        self.sheet_name = config.get('sheet_name', 'Sheet1')
+        self.max_column_width = config.get('max_column_width', 100)
+        
+        # Параметры для UP и DIF
+        self.up_config = config.get('up', {})
+        self.dif_config = config.get('dif', {})
+        
+        # Параметры выбора месяцев
+        self.selected_months = config.get('selected_months', [])
+        
+        # Параметры менеджеров
+        self.include_managers = config.get('include_managers', True)
+        self.manager_business_block = config.get('manager_business_block', 'Клиентские менеджеры')
+        
+        # Инициализация генератора случайных чисел
+        self.random = random.Random()
+        self.random.seed()
+        
+        # Кэш для данных менеджеров по месяцам
+        self.managers_cache = {}
+        if self.include_managers:
+            self._preload_managers_data()
+        
+        # Хранилище фактов по клиентам и месяцам (для нарастающих фактов)
+        # Ключ: (ИНН, индекс строки), значение: словарь {месяц: факт}
+        self.facts_storage = {}
+    
+    def _preload_managers_data(self) -> None:
+        """
+        Предзагружает данные о клиентских менеджерах из USER_CNG для всех месяцев.
+        """
+        self.logger.debug("Предзагрузка данных менеджеров [class: FactSheetGenerator | def: _preload_managers_data]")
+        
+        # Фильтруем только клиентских менеджеров
+        managers_df = self.user_cng_data[
+            self.user_cng_data['Бизнес-блок'].str.strip().str.upper() == 
+            self.manager_business_block.strip().upper()
+        ].copy()
+        
+        if managers_df.empty:
+            self.logger.warning(f"Не найдено менеджеров блока {self.manager_business_block} в USER_CNG")
+            return
+        
+        # Кэшируем данные по месяцам
+        for month in range(1, 13):
+            month_data = {}
+            for _, row in managers_df.iterrows():
+                tab_number = str(row['Табельный номер']).strip()
+                org_code = str(row.get(f'Месяц_{month}_Код подразделения', '-')).strip()
+                
+                # Пропускаем менеджеров без подразделения
+                if org_code == '-' or org_code == '' or pd.isna(org_code):
+                    continue
+                
+                month_data[tab_number] = {
+                    'Табельный номер': tab_number,
+                    'ФИО': row['ФИО'],
+                    'Код подразделения': org_code,
+                    'Короткое ТБ': str(row.get(f'Месяц_{month}_Короткое ТБ', '-')).strip(),
+                    'Полное ГОСБ': str(row.get(f'Месяц_{month}_Полное ГОСБ', '-')).strip()
+                }
+            
+            self.managers_cache[month] = month_data
+        
+        self.logger.debug(f"Предзагружены данные менеджеров для {len(self.managers_cache)} месяцев [class: FactSheetGenerator | def: _preload_managers_data]")
+    
+    def _filter_clients_for_month(self, month: int) -> pd.DataFrame:
+        """
+        Фильтрует клиентов, у которых в указанном месяце есть данные по ТБ и ГОСБ (не "-").
+        
+        Args:
+            month: Номер месяца (1-12)
+            
+        Returns:
+            DataFrame с отфильтрованными клиентами
+        """
+        tb_col = f'Месяц_{month}_Короткое ТБ'
+        gosb_col = f'Месяц_{month}_Полное ГОСБ'
+        
+        # Фильтруем клиентов, у которых есть данные по ТБ и ГОСБ
+        filtered = self.client_cng_data[
+            (self.client_cng_data[tb_col].astype(str).str.strip() != '-') &
+            (self.client_cng_data[tb_col].astype(str).str.strip() != '') &
+            (~self.client_cng_data[tb_col].isna()) &
+            (self.client_cng_data[gosb_col].astype(str).str.strip() != '-') &
+            (self.client_cng_data[gosb_col].astype(str).str.strip() != '') &
+            (~self.client_cng_data[gosb_col].isna())
+        ].copy()
+        
+        return filtered
+    
+    def _generate_up_facts(self, clients_df: pd.DataFrame, month: int) -> pd.DataFrame:
+        """
+        Генерирует нарастающие факты (UP) для клиентов.
+        
+        Args:
+            clients_df: DataFrame с клиентами для этого месяца
+            month: Номер месяца (1-12)
+            
+        Returns:
+            DataFrame с добавленной колонкой факта
+        """
+        result_df = clients_df.copy()
+        fact_col = f'Месяц_{month}_Факт'
+        
+        # Категоризируем клиентов
+        categories = self.up_config.get('categories', {})
+        growing_pct = categories.get('growing', {}).get('pct', 0.70)
+        no_change_pct = categories.get('no_change', {}).get('pct', 0.20)
+        decreasing_pct = categories.get('decreasing', {}).get('pct', 0.10)
+        
+        # Нормализуем проценты
+        total_pct = growing_pct + no_change_pct + decreasing_pct
+        if total_pct > 0:
+            growing_pct = growing_pct / total_pct
+            no_change_pct = no_change_pct / total_pct
+            decreasing_pct = decreasing_pct / total_pct
+        
+        # Генерируем факты
+        facts = []
+        min_amount = self.up_config.get('min_amount', 0)
+        max_amount = self.up_config.get('max_amount', 200_000_000)
+        
+        # Если это первый месяц, генерируем начальные суммы
+        if month == 1:
+            zero_max_pct = self.up_config.get('zero_in_first_month_max_pct', 0.05)
+            zero_count = int(len(clients_df) * zero_max_pct)
+            
+            for idx, row in clients_df.iterrows():
+                client_key = (str(row['ИНН']).strip(), idx)
+                
+                if len(facts) < zero_count:
+                    # Нулевые суммы (не более 5%)
+                    fact_value = 0
+                else:
+                    # Случайные суммы от 0 до 200 млн
+                    fact_value = self.random.randint(min_amount, max_amount)
+                
+                facts.append(fact_value)
+                # Сохраняем в хранилище
+                if client_key not in self.facts_storage:
+                    self.facts_storage[client_key] = {}
+                self.facts_storage[client_key][month] = fact_value
+        else:
+            # Для последующих месяцев используем предыдущие факты из хранилища
+            zero_growth_max_pct = self.up_config.get('zero_growth_max_pct', 0.05)
+            zero_growth_count = int(len(clients_df) * zero_growth_max_pct)
+            
+            decrease_max_pct = self.up_config.get('decrease_max_pct', 0.01)
+            decrease_count = int(len(clients_df) * decrease_max_pct)
+            
+            decrease_idx = 0
+            zero_growth_idx = 0
+            
+            for idx, row in clients_df.iterrows():
+                client_key = (str(row['ИНН']).strip(), idx)
+                
+                # Находим последний месяц с фактом для этого клиента
+                prev_fact = 0
+                for prev_month in range(month - 1, 0, -1):
+                    if client_key in self.facts_storage and prev_month in self.facts_storage[client_key]:
+                        prev_fact = self.facts_storage[client_key][prev_month]
+                        break
+                
+                # Если клиент появился впервые в этом месяце, используем случайную начальную сумму
+                if prev_fact == 0:
+                    prev_fact = self.random.randint(min_amount, max_amount)
+                
+                rand = self.random.random()
+                
+                # Определяем категорию клиента
+                if rand < decreasing_pct and decrease_idx < decrease_count:
+                    # Снижение (не более 1%)
+                    decrease_idx += 1
+                    decrease_config = categories.get('decreasing', {})
+                    min_decrease_pct = decrease_config.get('min_decrease_pct', 0.01)
+                    max_decrease_pct = decrease_config.get('max_decrease_pct', 0.10)
+                    decrease_pct_val = self.random.uniform(min_decrease_pct, max_decrease_pct)
+                    new_fact = int(prev_fact * (1 - decrease_pct_val))
+                elif rand < decreasing_pct + no_change_pct:
+                    # Без изменений
+                    new_fact = prev_fact
+                elif rand < decreasing_pct + no_change_pct + growing_pct:
+                    # Рост
+                    if zero_growth_idx < zero_growth_count and self.random.random() < 0.1:
+                        # Нулевой прирост (не более 5%)
+                        zero_growth_idx += 1
+                        new_fact = prev_fact
+                    else:
+                        # Прирост
+                        growth_config = categories.get('growing', {})
+                        growth_type = growth_config.get('growth_type', 'random')
+                        
+                        if growth_type == 'percentage':
+                            min_growth_pct = growth_config.get('min_growth_pct', 0.01)
+                            max_growth_pct = growth_config.get('max_growth_pct', 0.50)
+                            growth_pct = self.random.uniform(min_growth_pct, max_growth_pct)
+                            new_fact = int(prev_fact * (1 + growth_pct))
+                        else:
+                            # random
+                            min_growth_amount = growth_config.get('min_growth_amount', 1_000_000)
+                            max_growth_amount = growth_config.get('max_growth_amount', 100_000_000)
+                            growth = self.random.randint(min_growth_amount, max_growth_amount)
+                            new_fact = prev_fact + growth
+                else:
+                    # По умолчанию - без изменений
+                    new_fact = prev_fact
+                
+                # Убеждаемся, что новый факт не меньше предыдущего (кроме случаев снижения)
+                if new_fact < prev_fact and decrease_idx > decrease_count:
+                    new_fact = prev_fact
+                
+                facts.append(new_fact)
+                # Сохраняем в хранилище
+                if client_key not in self.facts_storage:
+                    self.facts_storage[client_key] = {}
+                self.facts_storage[client_key][month] = new_fact
+        
+        result_df[fact_col] = facts
+        return result_df
+    
+    def _generate_dif_facts(self, clients_df: pd.DataFrame, month: int) -> pd.DataFrame:
+        """
+        Генерирует дифференциальные факты (DIF) для клиентов.
+        
+        Args:
+            clients_df: DataFrame с клиентами для этого месяца
+            month: Номер месяца (1-12)
+            
+        Returns:
+            DataFrame с добавленной колонкой факта
+        """
+        result_df = clients_df.copy()
+        fact_col = f'Месяц_{month}_Факт'
+        
+        # Категоризируем клиентов
+        categories = self.dif_config.get('categories', {})
+        start_with_zero_pct = categories.get('start_with_zero', {}).get('pct', 0.15)
+        decreasing_debt_pct = categories.get('decreasing_debt', {}).get('pct', 0.25)
+        seasonal_pct = categories.get('seasonal', {}).get('pct', 0.30)
+        fall_to_zero_pct = categories.get('fall_to_zero_no_recovery', {}).get('pct', 0.10)
+        normal_movement_pct = categories.get('normal_movement', {}).get('pct', 0.20)
+        
+        # Нормализуем проценты
+        total_pct = start_with_zero_pct + decreasing_debt_pct + seasonal_pct + fall_to_zero_pct + normal_movement_pct
+        if total_pct > 0:
+            start_with_zero_pct = start_with_zero_pct / total_pct
+            decreasing_debt_pct = decreasing_debt_pct / total_pct
+            seasonal_pct = seasonal_pct / total_pct
+            fall_to_zero_pct = fall_to_zero_pct / total_pct
+            normal_movement_pct = normal_movement_pct / total_pct
+        
+        # Генерируем факты
+        facts = []
+        min_amount = self.dif_config.get('min_amount', 0)
+        max_amount = self.dif_config.get('max_amount', 500_000_000)
+        min_change = self.dif_config.get('min_change', -50_000_000)
+        max_change = self.dif_config.get('max_change', 100_000_000)
+        
+        # Если это первый месяц, генерируем начальные суммы
+        if month == 1:
+            start_zero_count = int(len(clients_df) * start_with_zero_pct)
+            
+            for idx, row in clients_df.iterrows():
+                client_key = (str(row['ИНН']).strip(), idx)
+                
+                if len(facts) < start_zero_count:
+                    # Старт с 0
+                    fact_value = 0
+                else:
+                    # Случайные суммы от 0 до 500 млн
+                    fact_value = self.random.randint(min_amount, max_amount)
+                
+                facts.append(fact_value)
+                # Сохраняем в хранилище
+                if client_key not in self.facts_storage:
+                    self.facts_storage[client_key] = {}
+                self.facts_storage[client_key][month] = fact_value
+        else:
+            # Для последующих месяцев используем предыдущие факты из хранилища
+            fall_to_zero_months = categories.get('fall_to_zero_no_recovery', {}).get('months_to_zero', [])
+            fall_to_zero_count = int(len(clients_df) * fall_to_zero_pct)
+            fall_to_zero_idx = 0
+            
+            for idx, row in clients_df.iterrows():
+                client_key = (str(row['ИНН']).strip(), idx)
+                
+                # Находим последний месяц с фактом для этого клиента
+                prev_fact = 0
+                for prev_month in range(month - 1, 0, -1):
+                    if client_key in self.facts_storage and prev_month in self.facts_storage[client_key]:
+                        prev_fact = self.facts_storage[client_key][prev_month]
+                        break
+                
+                # Если клиент появился впервые в этом месяце, используем случайную начальную сумму
+                if prev_fact == 0:
+                    prev_fact = self.random.randint(min_amount, max_amount)
+                
+                rand = self.random.random()
+                
+                # Определяем категорию клиента
+                if rand < start_with_zero_pct:
+                    # Старт с 0 (только в первом месяце, здесь не должно быть)
+                    new_fact = prev_fact
+                elif rand < start_with_zero_pct + decreasing_debt_pct:
+                    # Снижение долга
+                    decrease_config = categories.get('decreasing_debt', {})
+                    min_decrease_pct = decrease_config.get('min_decrease_pct', 0.05)
+                    max_decrease_pct = decrease_config.get('max_decrease_pct', 0.50)
+                    decrease_pct = self.random.uniform(min_decrease_pct, max_decrease_pct)
+                    new_fact = max(0, int(prev_fact * (1 - decrease_pct)))  # Не может быть меньше 0
+                elif rand < start_with_zero_pct + decreasing_debt_pct + seasonal_pct:
+                    # Сезонное движение
+                    seasonal_config = categories.get('seasonal', {})
+                    pattern = seasonal_config.get('seasonal_pattern', 'up_down')
+                    min_seasonal = seasonal_config.get('min_seasonal_change', 10_000_000)
+                    max_seasonal = seasonal_config.get('max_seasonal_change', 80_000_000)
+                    
+                    if pattern == 'up_down':
+                        # Вверх-вниз: первые 6 месяцев растут, последние 6 падают
+                        if month <= 6:
+                            change = self.random.randint(min_seasonal, max_seasonal)
+                        else:
+                            change = -self.random.randint(min_seasonal, max_seasonal)
+                    else:  # down_up
+                        # Вниз-вверх: первые 6 месяцев падают, последние 6 растут
+                        if month <= 6:
+                            change = -self.random.randint(min_seasonal, max_seasonal)
+                        else:
+                            change = self.random.randint(min_seasonal, max_seasonal)
+                    
+                    new_fact = max(0, prev_fact + change)  # Не может быть меньше 0
+                elif rand < start_with_zero_pct + decreasing_debt_pct + seasonal_pct + fall_to_zero_pct:
+                    # Падение до 0 без восстановления
+                    if month in fall_to_zero_months and fall_to_zero_idx < fall_to_zero_count:
+                        fall_to_zero_idx += 1
+                        new_fact = 0
+                    else:
+                        # Остается на текущем уровне или немного меняется
+                        change = self.random.randint(min_change, max_change)
+                        new_fact = max(0, prev_fact + change)
+                else:
+                    # Нормальное движение (может расти и падать)
+                    change = self.random.randint(min_change, max_change)
+                    new_fact = max(0, prev_fact + change)  # Не может быть меньше 0
+                
+                facts.append(new_fact)
+                # Сохраняем в хранилище
+                if client_key not in self.facts_storage:
+                    self.facts_storage[client_key] = {}
+                self.facts_storage[client_key][month] = new_fact
+        
+        result_df[fact_col] = facts
+        return result_df
+    
+    def _add_managers_data(self, clients_df: pd.DataFrame, month: int) -> pd.DataFrame:
+        """
+        Добавляет данные клиентских менеджеров из USER_CNG для указанного месяца.
+        
+        Args:
+            clients_df: DataFrame с клиентами
+            month: Номер месяца (1-12)
+            
+        Returns:
+            DataFrame с добавленными данными менеджеров
+        """
+        if not self.include_managers:
+            return clients_df
+        
+        result_df = clients_df.copy()
+        
+        # Получаем данные менеджеров для этого месяца из кэша
+        month_managers = self.managers_cache.get(month, {})
+        
+        if not month_managers:
+            self.logger.warning(f"Не найдено менеджеров для месяца {month} [class: FactSheetGenerator | def: _add_managers_data]")
+            return result_df
+        
+        # Добавляем колонки с данными менеджеров
+        tab_col = f'Месяц_{month}_Табельный номер'
+        fio_col = f'Месяц_{month}_ФИО'
+        org_code_col = f'Месяц_{month}_Код подразделения'
+        tb_col = f'Месяц_{month}_Короткое ТБ'
+        gosb_col = f'Месяц_{month}_Полное ГОСБ'
+        
+        # Получаем табельные номера менеджеров из CLIENT_CNG
+        client_tab_col = f'Месяц_{month}_Табельный номер'
+        
+        if client_tab_col in result_df.columns:
+            # Создаем колонки для менеджеров
+            result_df[tab_col] = result_df[client_tab_col]
+            result_df[fio_col] = result_df[client_tab_col].apply(
+                lambda x: month_managers.get(str(x).strip(), {}).get('ФИО', '-') if str(x).strip() != '-' else '-'
+            )
+            result_df[org_code_col] = result_df[client_tab_col].apply(
+                lambda x: month_managers.get(str(x).strip(), {}).get('Код подразделения', '-') if str(x).strip() != '-' else '-'
+            )
+            result_df[tb_col] = result_df[client_tab_col].apply(
+                lambda x: month_managers.get(str(x).strip(), {}).get('Короткое ТБ', '-') if str(x).strip() != '-' else '-'
+            )
+            result_df[gosb_col] = result_df[client_tab_col].apply(
+                lambda x: month_managers.get(str(x).strip(), {}).get('Полное ГОСБ', '-') if str(x).strip() != '-' else '-'
+            )
+        else:
+            # Если колонки нет, заполняем '-'
+            result_df[tab_col] = '-'
+            result_df[fio_col] = '-'
+            result_df[org_code_col] = '-'
+            result_df[tb_col] = '-'
+            result_df[gosb_col] = '-'
+        
+        return result_df
+    
+    def _save_month_sheet(self, df: pd.DataFrame, month: int, fact_type: str) -> str:
+        """
+        Сохраняет лист для указанного месяца в отдельный Excel файл.
+        
+        Args:
+            df: DataFrame с данными для сохранения
+            month: Номер месяца (1-12)
+            fact_type: Тип факта ('UP' или 'DIF')
+            
+        Returns:
+            Путь к созданному файлу
+        """
+        # Формируем имя файла: M-{month}_{fact_type}_{timestamp}
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M")
+        filename = f"M-{month}_{fact_type}_{timestamp}.xlsx"
+        filepath = self.output_dir / filename
+        
+        # Формируем колонки для сохранения
+        # Базовые колонки: ИНН, Наименование
+        columns = ['ИНН', 'Наименование']
+        
+        # Колонка факта
+        fact_col = f'Месяц_{month}_Факт'
+        if fact_col in df.columns:
+            columns.append(fact_col)
+        
+        # Колонки менеджеров (если включены)
+        if self.include_managers:
+            columns.extend([
+                f'Месяц_{month}_Табельный номер',
+                f'Месяц_{month}_ФИО',
+                f'Месяц_{month}_Код подразделения',
+                f'Месяц_{month}_Короткое ТБ',
+                f'Месяц_{month}_Полное ГОСБ'
+            ])
+        
+        # Выбираем только существующие колонки
+        columns = [col for col in columns if col in df.columns]
+        result_df = df[columns].copy()
+        
+        # Сохраняем в Excel
+        with pd.ExcelWriter(filepath, engine='openpyxl') as writer:
+            result_df.to_excel(writer, sheet_name=self.sheet_name, index=False)
+            
+            # Получаем объект листа для форматирования
+            worksheet = writer.sheets[self.sheet_name]
+            
+            # Устанавливаем текстовый формат для колонки ИНН
+            from openpyxl.utils import get_column_letter
+            inn_col_idx = list(result_df.columns).index('ИНН') + 1
+            inn_col_letter = get_column_letter(inn_col_idx)
+            for row in range(2, len(result_df) + 2):
+                cell = worksheet[f'{inn_col_letter}{row}']
+                cell.number_format = '@'
+                if cell.value and str(cell.value) != 'nan' and str(cell.value).strip() != '':
+                    cell.value = str(cell.value).zfill(12)
+            
+            # Устанавливаем текстовый формат для табельных номеров (если есть)
+            if self.include_managers:
+                tab_col_name = f'Месяц_{month}_Табельный номер'
+                if tab_col_name in result_df.columns:
+                    tab_col_idx = list(result_df.columns).index(tab_col_name) + 1
+                    tab_col_letter = get_column_letter(tab_col_idx)
+                    for row in range(2, len(result_df) + 2):
+                        cell = worksheet[f'{tab_col_letter}{row}']
+                        cell.number_format = '@'
+                        if cell.value and str(cell.value) != '-' and str(cell.value) != 'nan' and str(cell.value).strip() != '':
+                            cell.value = str(cell.value).zfill(8)
+            
+            # Закрепляем первую строку
+            worksheet.freeze_panes = 'A2'
+            
+            # Включаем автофильтр
+            worksheet.auto_filter.ref = worksheet.dimensions
+            
+            # Настраиваем ширину колонок
+            for column in worksheet.columns:
+                max_length = 0
+                column_letter = get_column_letter(column[0].column)
+                
+                for cell in column:
+                    try:
+                        if cell.value:
+                            max_length = max(max_length, len(str(cell.value)))
+                    except:
+                        pass
+                
+                adjusted_width = min(max(max_length + 2, 10), self.max_column_width)
+                worksheet.column_dimensions[column_letter].width = adjusted_width
+            
+            # Делаем первую строку жирной
+            from openpyxl.styles import Font
+            header_font = Font(bold=True)
+            for cell in worksheet[1]:
+                cell.font = header_font
+        
+        self.logger.info(f"Создан файл для месяца {month} типа {fact_type}: {filepath.name}")
+        
+        return str(filepath.absolute())
+    
+    def process(self) -> List[str]:
+        """
+        Полный цикл генерации листов с фактами.
+        
+        Returns:
+            Список путей к созданным файлам
+        """
+        self.logger.info("Начало генерации листов с фактами")
+        
+        # Создаем словарь: месяц -> тип факта
+        month_to_fact_type = {}
+        for selection in self.selected_months:
+            months = selection.get('months', [])
+            fact_type = selection.get('fact_type', 'UP')
+            for month in months:
+                if 1 <= month <= 12:
+                    month_to_fact_type[month] = fact_type
+        
+        created_files = []
+        
+        # Обрабатываем месяцы в правильном порядке (от 1 до 12) для накопления фактов
+        for month in range(1, 13):
+            if month not in month_to_fact_type:
+                continue  # Пропускаем месяцы, которые не запрошены
+            
+            fact_type = month_to_fact_type[month]
+            
+            self.logger.debug(f"Обработка месяца {month} типа {fact_type} [class: FactSheetGenerator | def: process]")
+            
+            # Фильтруем клиентов для этого месяца
+            clients_df = self._filter_clients_for_month(month)
+            
+            if clients_df.empty:
+                self.logger.warning(f"Не найдено клиентов для месяца {month} [class: FactSheetGenerator | def: process]")
+                continue
+            
+            # Генерируем факты
+            if fact_type == 'UP':
+                clients_df = self._generate_up_facts(clients_df, month)
+            elif fact_type == 'DIF':
+                clients_df = self._generate_dif_facts(clients_df, month)
+            else:
+                self.logger.warning(f"Неизвестный тип факта: {fact_type} [class: FactSheetGenerator | def: process]")
+                continue
+            
+            # Добавляем данные менеджеров
+            clients_df = self._add_managers_data(clients_df, month)
+            
+            # Сохраняем в файл
+            filepath = self._save_month_sheet(clients_df, month, fact_type)
+            created_files.append(filepath)
+        
+        self.logger.info(f"Генерация листов с фактами завершена. Создано файлов: {len(created_files)}")
+        
+        return created_files
+
+
+def generate_fact_sheets(
+    config: Dict,
+    client_cng_data: pd.DataFrame,
+    user_cng_data: pd.DataFrame,
+    output_dir: str = "OUT",
+    logger: Optional[logging.Logger] = None
+) -> List[str]:
+    """
+    Функция для генерации листов с фактами (UP и DIF).
+    
+    Args:
+        config: Словарь конфигурации из LOADER_CONFIG['FACT_SHEETS']
+        client_cng_data: DataFrame с данными изменений клиентов (из листа CLIENT_CNG)
+        user_cng_data: DataFrame с данными изменений пользователей (из листа USER_CNG)
+        output_dir: Директория для выходных файлов
+        logger: Логгер для записи событий
+        
+    Returns:
+        Список путей к созданным файлам
+    """
+    generator = FactSheetGenerator(
+        config=config,
+        client_cng_data=client_cng_data,
+        user_cng_data=user_cng_data,
+        output_dir=output_dir,
+        logger=logger
+    )
+    return generator.process()
+
+
 # ============================================================================
 # ГЛАВНАЯ ФУНКЦИЯ
 # ============================================================================
@@ -1305,6 +3884,8 @@ def main() -> None:
     # Сначала загружаем данные ORG (они нужны для генерации пользователей)
     org_data = None
     org_output_file = None
+    users_data = None
+    users_output_file = None
     
     # Загрузка и обработка данных для каждого загрузчика из конфигурации
     for loader_name, loader_config in LOADER_CONFIG.items():
@@ -1365,10 +3946,138 @@ def main() -> None:
                 )
                 logger.info(f"Генерация пользователей завершена успешно. Результат: {users_output_file}")
                 
+                # Загружаем данные пользователей для генерации изменений
+                users_df = pd.read_excel(users_output_file, sheet_name=loader_config['sheet_name'])
+                users_data = users_df
+                logger.info(f"Загружено {len(users_df)} пользователей из листа USERS для генерации изменений")
+                
             except Exception as e:
                 error_msg = f"Ошибка при генерации пользователей: {str(e)}"
                 logger.error(error_msg)
                 raise
+        
+        # Обработка генератора изменений пользователей
+        elif loader_name == 'USER_CNG':
+            if org_data is None or users_data is None:
+                error_msg = "Данные ORG или USERS не загружены. Невозможно сгенерировать изменения пользователей."
+                logger.error(error_msg)
+                raise ValueError(error_msg)
+            
+            logger.info("Начало генерации изменений пользователей")
+            logger.debug(f"Конфигурация генератора изменений: лист={loader_config['sheet_name']} [class: main | def: main]")
+            
+            try:
+                # Получаем конфигурацию серой зоны из USERS
+                gray_zone_config = LOADER_CONFIG['USERS']['gray_zone']
+                
+                # Генерируем изменения пользователей
+                user_changes_output_file = generate_user_changes(
+                    config=loader_config,
+                    users_data=users_data,
+                    org_data=org_data,
+                    gray_zone_config=gray_zone_config,
+                    output_file_base=OUTPUT_FILE_BASE,
+                    output_dir=OUTPUT_DIR,
+                    logger=logger
+                )
+                logger.info(f"Генерация изменений пользователей завершена успешно. Результат: {user_changes_output_file}")
+                
+                # Загружаем данные изменений пользователей для генерации изменений клиентов
+                user_cng_df = pd.read_excel(user_changes_output_file, sheet_name=loader_config['sheet_name'])
+                user_cng_data = user_cng_df
+                logger.info(f"Загружено {len(user_cng_df)} записей из листа USER_CNG для генерации изменений клиентов")
+                
+            except Exception as e:
+                error_msg = f"Ошибка при генерации изменений пользователей: {str(e)}"
+                logger.error(error_msg)
+                raise
+        
+        # Обработка генератора клиентов
+        elif loader_name == 'CLIENTS':
+            logger.info("Начало генерации клиентов")
+            logger.debug(f"Конфигурация генератора клиентов: лист={loader_config['sheet_name']}, количество={loader_config['count']} [class: main | def: main]")
+            
+            try:
+                # Генерируем клиентов
+                clients_output_file = generate_clients(
+                    config=loader_config,
+                    output_file_base=OUTPUT_FILE_BASE,
+                    output_dir=OUTPUT_DIR,
+                    logger=logger
+                )
+                logger.info(f"Генерация клиентов завершена успешно. Результат: {clients_output_file}")
+                
+                # Загружаем данные клиентов для генерации изменений
+                clients_df = pd.read_excel(clients_output_file, sheet_name=loader_config['sheet_name'])
+                clients_data = clients_df
+                logger.info(f"Загружено {len(clients_df)} клиентов из листа CLIENTS для генерации изменений")
+                
+            except Exception as e:
+                error_msg = f"Ошибка при генерации клиентов: {str(e)}"
+                logger.error(error_msg)
+                raise
+        
+        # Обработка генератора изменений клиентов
+        elif loader_name == 'CLIENT_CNG':
+            if user_cng_data is None or clients_data is None:
+                error_msg = "Данные USER_CNG или CLIENTS не загружены. Невозможно сгенерировать изменения клиентов."
+                logger.error(error_msg)
+                raise ValueError(error_msg)
+            
+            logger.info("Начало генерации изменений клиентов")
+            logger.debug(f"Конфигурация генератора изменений клиентов: лист={loader_config['sheet_name']} [class: main | def: main]")
+            
+            try:
+                # Генерируем изменения клиентов
+                client_changes_output_file = generate_client_changes(
+                    config=loader_config,
+                    clients_data=clients_data,
+                    user_cng_data=user_cng_data,
+                    output_file_base=OUTPUT_FILE_BASE,
+                    output_dir=OUTPUT_DIR,
+                    logger=logger
+                )
+                logger.info(f"Генерация изменений клиентов завершена успешно. Результат: {client_changes_output_file}")
+                
+                # Загружаем данные CLIENT_CNG для генерации листов с фактами
+                client_cng_data = pd.read_excel(client_changes_output_file, sheet_name=loader_config['sheet_name'])
+                logger.info(f"Загружено {len(client_cng_data)} записей из листа CLIENT_CNG для генерации листов с фактами")
+                
+            except Exception as e:
+                error_msg = f"Ошибка при генерации изменений клиентов: {str(e)}"
+                logger.error(error_msg)
+                raise
+        
+        # Обработка генератора листов с фактами (FACT_SHEETS)
+        if 'FACT_SHEETS' in LOADER_CONFIG:
+            fact_sheets_config = LOADER_CONFIG['FACT_SHEETS']
+            
+            # Проверяем, что необходимые данные загружены
+            if 'client_cng_data' not in locals() or client_cng_data is None:
+                logger.warning("Данные CLIENT_CNG не загружены. Пропуск генерации листов с фактами.")
+            elif user_cng_data is None:
+                logger.warning("Данные USER_CNG не загружены. Пропуск генерации листов с фактами.")
+            else:
+                logger.info("Начало генерации листов с фактами")
+                logger.debug(f"Конфигурация генератора листов с фактами: выходная директория={fact_sheets_config.get('output_dir', 'OUT')} [class: main | def: main]")
+                
+                try:
+                    # Генерируем листы с фактами
+                    fact_sheets_files = generate_fact_sheets(
+                        config=fact_sheets_config,
+                        client_cng_data=client_cng_data,
+                        user_cng_data=user_cng_data,
+                        output_dir=fact_sheets_config.get('output_dir', OUTPUT_DIR),
+                        logger=logger
+                    )
+                    logger.info(f"Генерация листов с фактами завершена успешно. Создано файлов: {len(fact_sheets_files)}")
+                    for file_path in fact_sheets_files:
+                        logger.info(f"  - {file_path}")
+                    
+                except Exception as e:
+                    error_msg = f"Ошибка при генерации листов с фактами: {str(e)}"
+                    logger.error(error_msg)
+                    raise
 
 
 if __name__ == "__main__":
