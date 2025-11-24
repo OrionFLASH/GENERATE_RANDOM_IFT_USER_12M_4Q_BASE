@@ -417,9 +417,10 @@ LOADER_CONFIG = {
             }
         },
         
-        # Параметры выбора месяцев и типов фактов
+        # Параметры для создания отдельных файлов (копий листов)
         # Формат: список словарей, каждый словарь содержит 'months' (список месяцев) и 'fact_type' ('UP' или 'DIF')
         # Пример: [{'months': [1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12], 'fact_type': 'UP'}, {'months': [3], 'fact_type': 'DIF'}]
+        # Если пустой список - отдельные файлы не создаются, только листы в основном файле
         'selected_months': [
             {'months': [1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12], 'fact_type': 'UP'},
             {'months': [3], 'fact_type': 'DIF'}
@@ -3243,6 +3244,7 @@ class FactSheetGenerator:
         config: Dict,
         client_cng_data: pd.DataFrame,
         user_cng_data: pd.DataFrame,
+        output_file_base: str = "result_base",
         output_dir: str = "OUT",
         logger: Optional[logging.Logger] = None
     ) -> None:
@@ -3253,12 +3255,14 @@ class FactSheetGenerator:
             config: Словарь конфигурации из LOADER_CONFIG['FACT_SHEETS']
             client_cng_data: DataFrame с данными изменений клиентов (из листа CLIENT_CNG)
             user_cng_data: DataFrame с данными изменений пользователей (из листа USER_CNG)
+            output_file_base: Базовое имя выходного Excel файла для основного файла
             output_dir: Директория для выходных файлов
             logger: Логгер для записи событий
         """
         self.config = config
         self.client_cng_data = client_cng_data
         self.user_cng_data = user_cng_data
+        self.output_file_base = output_file_base
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(exist_ok=True)
         self.logger = logger or logging.getLogger(__name__)
@@ -3271,7 +3275,7 @@ class FactSheetGenerator:
         self.up_config = config.get('up', {})
         self.dif_config = config.get('dif', {})
         
-        # Параметры выбора месяцев
+        # Параметры выбора месяцев для отдельных файлов
         self.selected_months = config.get('selected_months', [])
         
         # Параметры менеджеров
@@ -3677,6 +3681,101 @@ class FactSheetGenerator:
         
         return result_df
     
+    def _save_sheet_to_main_file(self, df: pd.DataFrame, month: int, fact_type: str, excel_path: Path, file_mode: str) -> None:
+        """
+        Сохраняет лист для указанного месяца в основной Excel файл.
+        
+        Args:
+            df: DataFrame с данными для сохранения
+            month: Номер месяца (1-12)
+            fact_type: Тип факта ('UP' или 'DIF')
+            excel_path: Путь к основному Excel файлу
+            file_mode: Режим открытия файла ('w' или 'a')
+        """
+        # Формируем имя листа: M-{month}_{fact_type}
+        sheet_name = f"M-{month}_{fact_type}"
+        
+        # Формируем колонки для сохранения
+        # Базовые колонки: ИНН, Наименование
+        columns = ['ИНН', 'Наименование']
+        
+        # Колонка факта
+        fact_col = f'Месяц_{month}_Факт'
+        if fact_col in df.columns:
+            columns.append(fact_col)
+        
+        # Колонки менеджеров (если включены)
+        if self.include_managers:
+            columns.extend([
+                f'Месяц_{month}_Табельный номер',
+                f'Месяц_{month}_ФИО',
+                f'Месяц_{month}_Код подразделения',
+                f'Месяц_{month}_Короткое ТБ',
+                f'Месяц_{month}_Полное ГОСБ'
+            ])
+        
+        # Выбираем только существующие колонки
+        columns = [col for col in columns if col in df.columns]
+        result_df = df[columns].copy()
+        
+        # Сохраняем в Excel
+        with pd.ExcelWriter(excel_path, engine='openpyxl', mode=file_mode, if_sheet_exists='replace') as writer:
+            result_df.to_excel(writer, sheet_name=sheet_name, index=False)
+            
+            # Получаем объект листа для форматирования
+            worksheet = writer.sheets[sheet_name]
+            
+            # Устанавливаем текстовый формат для колонки ИНН
+            from openpyxl.utils import get_column_letter
+            inn_col_idx = list(result_df.columns).index('ИНН') + 1
+            inn_col_letter = get_column_letter(inn_col_idx)
+            for row in range(2, len(result_df) + 2):
+                cell = worksheet[f'{inn_col_letter}{row}']
+                cell.number_format = '@'
+                if cell.value and str(cell.value) != 'nan' and str(cell.value).strip() != '':
+                    cell.value = str(cell.value).zfill(12)
+            
+            # Устанавливаем текстовый формат для табельных номеров (если есть)
+            if self.include_managers:
+                tab_col_name = f'Месяц_{month}_Табельный номер'
+                if tab_col_name in result_df.columns:
+                    tab_col_idx = list(result_df.columns).index(tab_col_name) + 1
+                    tab_col_letter = get_column_letter(tab_col_idx)
+                    for row in range(2, len(result_df) + 2):
+                        cell = worksheet[f'{tab_col_letter}{row}']
+                        cell.number_format = '@'
+                        if cell.value and str(cell.value) != '-' and str(cell.value) != 'nan' and str(cell.value).strip() != '':
+                            cell.value = str(cell.value).zfill(8)
+            
+            # Закрепляем первую строку
+            worksheet.freeze_panes = 'A2'
+            
+            # Включаем автофильтр
+            worksheet.auto_filter.ref = worksheet.dimensions
+            
+            # Настраиваем ширину колонок
+            for column in worksheet.columns:
+                max_length = 0
+                column_letter = get_column_letter(column[0].column)
+                
+                for cell in column:
+                    try:
+                        if cell.value:
+                            max_length = max(max_length, len(str(cell.value)))
+                    except:
+                        pass
+                
+                adjusted_width = min(max(max_length + 2, 10), self.max_column_width)
+                worksheet.column_dimensions[column_letter].width = adjusted_width
+            
+            # Делаем первую строку жирной
+            from openpyxl.styles import Font
+            header_font = Font(bold=True)
+            for cell in worksheet[1]:
+                cell.font = header_font
+        
+        self.logger.debug(f"Добавлен лист {sheet_name} в основной файл [class: FactSheetGenerator | def: _save_sheet_to_main_file]")
+    
     def _save_month_sheet(self, df: pd.DataFrame, month: int, fact_type: str) -> str:
         """
         Сохраняет лист для указанного месяца в отдельный Excel файл.
@@ -3782,54 +3881,89 @@ class FactSheetGenerator:
         Полный цикл генерации листов с фактами.
         
         Returns:
-            Список путей к созданным файлам
+            Список путей к созданным отдельным файлам
         """
         self.logger.info("Начало генерации листов с фактами")
         
-        # Создаем словарь: месяц -> тип факта
-        month_to_fact_type = {}
+        # Находим последний созданный файл с таким же базовым именем
+        existing_files = list(self.output_dir.glob(f"{self.output_file_base}_*.xlsx"))
+        
+        if existing_files:
+            excel_path = max(existing_files, key=lambda p: p.stat().st_mtime)
+            self.logger.info(f"Добавление листов с фактами в существующий файл: {excel_path.name}")
+            file_mode = 'a'
+        else:
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M")
+            excel_path = self.output_dir / f"{self.output_file_base}_{timestamp}.xlsx"
+            self.logger.info(f"Создание нового файла для листов с фактами: {excel_path.name}")
+            file_mode = 'w'
+        
+        # Создаем словарь для отдельных файлов: месяц -> тип факта
+        month_to_fact_type_for_separate = {}
         for selection in self.selected_months:
             months = selection.get('months', [])
             fact_type = selection.get('fact_type', 'UP')
             for month in months:
                 if 1 <= month <= 12:
-                    month_to_fact_type[month] = fact_type
+                    month_to_fact_type_for_separate[month] = fact_type
         
         created_files = []
         
-        # Обрабатываем месяцы в правильном порядке (от 1 до 12) для накопления фактов
-        for month in range(1, 13):
-            if month not in month_to_fact_type:
-                continue  # Пропускаем месяцы, которые не запрошены
-            
-            fact_type = month_to_fact_type[month]
-            
-            self.logger.debug(f"Обработка месяца {month} типа {fact_type} [class: FactSheetGenerator | def: process]")
-            
-            # Фильтруем клиентов для этого месяца
-            clients_df = self._filter_clients_for_month(month)
-            
-            if clients_df.empty:
-                self.logger.warning(f"Не найдено клиентов для месяца {month} [class: FactSheetGenerator | def: process]")
-                continue
-            
-            # Генерируем факты
-            if fact_type == 'UP':
-                clients_df = self._generate_up_facts(clients_df, month)
-            elif fact_type == 'DIF':
-                clients_df = self._generate_dif_facts(clients_df, month)
-            else:
-                self.logger.warning(f"Неизвестный тип факта: {fact_type} [class: FactSheetGenerator | def: process]")
-                continue
-            
-            # Добавляем данные менеджеров
-            clients_df = self._add_managers_data(clients_df, month)
-            
-            # Сохраняем в файл
-            filepath = self._save_month_sheet(clients_df, month, fact_type)
-            created_files.append(filepath)
+        # Хранилище для сгенерированных данных (чтобы не генерировать дважды)
+        generated_data = {}  # {(month, fact_type): DataFrame}
         
-        self.logger.info(f"Генерация листов с фактами завершена. Создано файлов: {len(created_files)}")
+        # Сначала генерируем все листы UP и DIF для всех 12 месяцев в основной файл
+        self.logger.info("Генерация всех листов UP и DIF в основной файл")
+        for month in range(1, 13):
+            # Генерируем UP факты
+            self.logger.debug(f"Обработка месяца {month} типа UP для основного файла [class: FactSheetGenerator | def: process]")
+            
+            clients_df_up = self._filter_clients_for_month(month)
+            if not clients_df_up.empty:
+                clients_df_up = self._generate_up_facts(clients_df_up, month)
+                clients_df_up = self._add_managers_data(clients_df_up, month)
+                generated_data[(month, 'UP')] = clients_df_up.copy()
+                self._save_sheet_to_main_file(clients_df_up, month, 'UP', excel_path, file_mode)
+                file_mode = 'a'  # После первого сохранения переключаемся на режим добавления
+            
+            # Генерируем DIF факты
+            self.logger.debug(f"Обработка месяца {month} типа DIF для основного файла [class: FactSheetGenerator | def: process]")
+            
+            clients_df_dif = self._filter_clients_for_month(month)
+            if not clients_df_dif.empty:
+                clients_df_dif = self._generate_dif_facts(clients_df_dif, month)
+                clients_df_dif = self._add_managers_data(clients_df_dif, month)
+                generated_data[(month, 'DIF')] = clients_df_dif.copy()
+                self._save_sheet_to_main_file(clients_df_dif, month, 'DIF', excel_path, file_mode)
+        
+        self.logger.info(f"Все листы UP и DIF добавлены в основной файл: {excel_path.name}")
+        
+        # Затем создаем отдельные файлы только для выбранных месяцев
+        if month_to_fact_type_for_separate:
+            self.logger.info("Создание отдельных файлов для выбранных месяцев")
+            
+            # Обрабатываем месяцы в правильном порядке (от 1 до 12)
+            for month in range(1, 13):
+                if month not in month_to_fact_type_for_separate:
+                    continue  # Пропускаем месяцы, которые не запрошены для отдельных файлов
+                
+                fact_type = month_to_fact_type_for_separate[month]
+                
+                self.logger.debug(f"Создание отдельного файла для месяца {month} типа {fact_type} [class: FactSheetGenerator | def: process]")
+                
+                # Используем уже сгенерированные данные из основного файла
+                key = (month, fact_type)
+                if key in generated_data:
+                    clients_df = generated_data[key]
+                    # Сохраняем в отдельный файл
+                    filepath = self._save_month_sheet(clients_df, month, fact_type)
+                    created_files.append(filepath)
+                else:
+                    self.logger.warning(f"Не найдены данные для месяца {month} типа {fact_type} [class: FactSheetGenerator | def: process]")
+        else:
+            self.logger.info("Отдельные файлы не создаются (selected_months пуст)")
+        
+        self.logger.info(f"Генерация листов с фактами завершена. Создано отдельных файлов: {len(created_files)}")
         
         return created_files
 
@@ -3838,6 +3972,7 @@ def generate_fact_sheets(
     config: Dict,
     client_cng_data: pd.DataFrame,
     user_cng_data: pd.DataFrame,
+    output_file_base: str = "result_base",
     output_dir: str = "OUT",
     logger: Optional[logging.Logger] = None
 ) -> List[str]:
@@ -3848,16 +3983,18 @@ def generate_fact_sheets(
         config: Словарь конфигурации из LOADER_CONFIG['FACT_SHEETS']
         client_cng_data: DataFrame с данными изменений клиентов (из листа CLIENT_CNG)
         user_cng_data: DataFrame с данными изменений пользователей (из листа USER_CNG)
+        output_file_base: Базовое имя выходного Excel файла для основного файла
         output_dir: Директория для выходных файлов
         logger: Логгер для записи событий
         
     Returns:
-        Список путей к созданным файлам
+        Список путей к созданным отдельным файлам
     """
     generator = FactSheetGenerator(
         config=config,
         client_cng_data=client_cng_data,
         user_cng_data=user_cng_data,
+        output_file_base=output_file_base,
         output_dir=output_dir,
         logger=logger
     )
@@ -4067,6 +4204,7 @@ def main() -> None:
                         config=fact_sheets_config,
                         client_cng_data=client_cng_data,
                         user_cng_data=user_cng_data,
+                        output_file_base=OUTPUT_FILE_BASE,
                         output_dir=fact_sheets_config.get('output_dir', OUTPUT_DIR),
                         logger=logger
                     )
