@@ -3745,6 +3745,31 @@ class FactSheetGenerator:
         
         return result_df
     
+    def _rename_month_columns(self, df: pd.DataFrame, month: int) -> pd.DataFrame:
+        """
+        Переименовывает месячные колонки (Факт и данные менеджеров) в универсальный вид без префикса "Месяц_X".
+        
+        Args:
+            df: DataFrame с исходными колонками
+            month: Номер месяца, для которого выполняется переименование
+        
+        Returns:
+            DataFrame с переименованными колонками
+        """
+        rename_map = {
+            f'Месяц_{month}_Факт': 'Факт',
+            f'Месяц_{month}_Табельный номер': 'Табельный номер',
+            f'Месяц_{month}_ФИО': 'ФИО',
+            f'Месяц_{month}_Код подразделения': 'Код подразделения',
+            f'Месяц_{month}_Короткое ТБ': 'Короткое ТБ',
+            f'Месяц_{month}_Полное ГОСБ': 'Полное ГОСБ'
+        }
+        
+        applicable_map = {old: new for old, new in rename_map.items() if old in df.columns}
+        if applicable_map:
+            return df.rename(columns=applicable_map)
+        return df
+    
     def _save_sheet_to_main_file_optimized(self, df: pd.DataFrame, month: int, fact_type: str, writer: pd.ExcelWriter) -> None:
         """
         Сохраняет лист для указанного месяца в основной Excel файл (оптимизированная версия с уже открытым writer).
@@ -3780,6 +3805,7 @@ class FactSheetGenerator:
         # Выбираем только существующие колонки
         columns = [col for col in columns if col in df.columns]
         result_df = df[columns].copy()
+        result_df = self._rename_month_columns(result_df, month)
         
         # Проверяем наличие данных
         if result_df.empty:
@@ -3804,20 +3830,20 @@ class FactSheetGenerator:
                 cell.value = str(cell.value).zfill(12)
         
         # Устанавливаем текстовый формат для табельных номеров (если есть)
-        if self.include_managers:
-            tab_col_name = f'Месяц_{month}_Табельный номер'
-            if tab_col_name in result_df.columns:
-                tab_col_idx = list(result_df.columns).index(tab_col_name) + 1
-                tab_col_letter = get_column_letter(tab_col_idx)
-                for row in range(2, len(result_df) + 2):
-                    cell = worksheet[f'{tab_col_letter}{row}']
-                    cell.number_format = '@'
-                    if cell.value and str(cell.value) != '-' and str(cell.value) != 'nan' and str(cell.value).strip() != '':
-                        cell.value = str(cell.value).zfill(8)
+        tab_col_name = 'Табельный номер'
+        if self.include_managers and tab_col_name in result_df.columns:
+            tab_col_idx = list(result_df.columns).index(tab_col_name) + 1
+            tab_col_letter = get_column_letter(tab_col_idx)
+            for row in range(2, len(result_df) + 2):
+                cell = worksheet[f'{tab_col_letter}{row}']
+                cell.number_format = '@'
+                if cell.value and str(cell.value) != '-' and str(cell.value) != 'nan' and str(cell.value).strip() != '':
+                    cell.value = str(cell.value).zfill(8)
         
         # Устанавливаем числовой формат для колонки факта (с разделителем разрядов и двумя знаками после запятой)
-        if fact_col in result_df.columns:
-            fact_col_idx = list(result_df.columns).index(fact_col) + 1
+        fact_col_name = 'Факт'
+        if fact_col_name in result_df.columns:
+            fact_col_idx = list(result_df.columns).index(fact_col_name) + 1
             fact_col_letter = get_column_letter(fact_col_idx)
             for row in range(2, len(result_df) + 2):
                 cell = worksheet[f'{fact_col_letter}{row}']
@@ -3887,6 +3913,7 @@ class FactSheetGenerator:
         # Выбираем только существующие колонки
         columns = [col for col in columns if col in df.columns]
         result_df = df[columns].copy()
+        result_df = self._rename_month_columns(result_df, month)
         
         # Сохраняем в Excel
         with pd.ExcelWriter(excel_path, engine='openpyxl', mode=file_mode, if_sheet_exists='replace') as writer:
@@ -3907,7 +3934,7 @@ class FactSheetGenerator:
             
             # Устанавливаем текстовый формат для табельных номеров (если есть)
             if self.include_managers:
-                tab_col_name = f'Месяц_{month}_Табельный номер'
+                tab_col_name = 'Табельный номер'
                 if tab_col_name in result_df.columns:
                     tab_col_idx = list(result_df.columns).index(tab_col_name) + 1
                     tab_col_letter = get_column_letter(tab_col_idx)
@@ -3916,6 +3943,15 @@ class FactSheetGenerator:
                         cell.number_format = '@'
                         if cell.value and str(cell.value) != '-' and str(cell.value) != 'nan' and str(cell.value).strip() != '':
                             cell.value = str(cell.value).zfill(8)
+            
+            # Форматирование числового столбца факта
+            fact_col_name = 'Факт'
+            if fact_col_name in result_df.columns:
+                fact_col_idx = list(result_df.columns).index(fact_col_name) + 1
+                fact_col_letter = get_column_letter(fact_col_idx)
+                for row in range(2, len(result_df) + 2):
+                    cell = worksheet[f'{fact_col_letter}{row}']
+                    cell.number_format = '#,##0.00'
             
             # Закрепляем первую строку
             worksheet.freeze_panes = 'A2'
@@ -3985,6 +4021,7 @@ class FactSheetGenerator:
         # Выбираем только существующие колонки
         columns = [col for col in columns if col in df.columns]
         result_df = df[columns].copy()
+        result_df = self._rename_month_columns(result_df, month)
         
         # Сохраняем в Excel
         with pd.ExcelWriter(filepath, engine='openpyxl') as writer:
@@ -4005,7 +4042,7 @@ class FactSheetGenerator:
             
             # Устанавливаем текстовый формат для табельных номеров (если есть)
             if self.include_managers:
-                tab_col_name = f'Месяц_{month}_Табельный номер'
+                tab_col_name = 'Табельный номер'
                 if tab_col_name in result_df.columns:
                     tab_col_idx = list(result_df.columns).index(tab_col_name) + 1
                     tab_col_letter = get_column_letter(tab_col_idx)
@@ -4016,8 +4053,9 @@ class FactSheetGenerator:
                             cell.value = str(cell.value).zfill(8)
             
             # Устанавливаем числовой формат для колонки факта (с разделителем разрядов и двумя знаками после запятой)
-            if fact_col in result_df.columns:
-                fact_col_idx = list(result_df.columns).index(fact_col) + 1
+            fact_col_name = 'Факт'
+            if fact_col_name in result_df.columns:
+                fact_col_idx = list(result_df.columns).index(fact_col_name) + 1
                 fact_col_letter = get_column_letter(fact_col_idx)
                 for row in range(2, len(result_df) + 2):
                     cell = worksheet[f'{fact_col_letter}{row}']
@@ -4077,14 +4115,18 @@ class FactSheetGenerator:
             self.logger.info(f"Создание нового файла для листов с фактами: {excel_path.name}")
             file_mode = 'w'
         
-        # Создаем словарь для отдельных файлов: месяц -> тип факта
-        month_to_fact_type_for_separate = {}
+        # Собираем уникальные пары (месяц, тип факта) для отдельных файлов
+        selected_pairs = []
+        seen_pairs = set()
         for selection in self.selected_months:
             months = selection.get('months', [])
-            fact_type = selection.get('fact_type', 'UP')
+            fact_type = str(selection.get('fact_type', 'UP')).strip().upper() or 'UP'
             for month in months:
                 if 1 <= month <= 12:
-                    month_to_fact_type_for_separate[month] = fact_type
+                    pair = (month, fact_type)
+                    if pair not in seen_pairs:
+                        seen_pairs.add(pair)
+                        selected_pairs.append(pair)
         
         created_files = []
         
@@ -4140,16 +4182,10 @@ class FactSheetGenerator:
         self.logger.info(f"Все 24 листа (12 UP + 12 DIF) добавлены в основной файл: {excel_path.name}")
         
         # Затем создаем отдельные файлы только для выбранных месяцев
-        if month_to_fact_type_for_separate:
-            self.logger.info(f"Создание отдельных файлов для {len(month_to_fact_type_for_separate)} выбранных месяцев")
+        if selected_pairs:
+            self.logger.info(f"Создание отдельных файлов для {len(selected_pairs)} уникальных комбинаций месяц/тип")
             
-            # Обрабатываем месяцы в правильном порядке (от 1 до 12)
-            for month in range(1, 13):
-                if month not in month_to_fact_type_for_separate:
-                    continue  # Пропускаем месяцы, которые не запрошены для отдельных файлов
-                
-                fact_type = month_to_fact_type_for_separate[month]
-                
+            for month, fact_type in sorted(selected_pairs, key=lambda x: (x[0], x[1])):
                 self.logger.info(f"Создание отдельного файла для месяца {month} типа {fact_type}")
                 
                 # Используем уже сгенерированные данные из основного файла
@@ -4387,37 +4423,35 @@ def main() -> None:
                 logger.error(error_msg)
                 raise
         
-        # Обработка генератора листов с фактами (FACT_SHEETS)
-        if 'FACT_SHEETS' in LOADER_CONFIG:
-            fact_sheets_config = LOADER_CONFIG['FACT_SHEETS']
+    # После завершения основного цикла отдельно запускаем генерацию листов с фактами
+    if 'FACT_SHEETS' in LOADER_CONFIG:
+        fact_sheets_config = LOADER_CONFIG['FACT_SHEETS']
+        
+        if 'client_cng_data' not in locals() or client_cng_data is None:
+            logger.warning("Данные CLIENT_CNG не загружены. Пропуск генерации листов с фактами.")
+        elif user_cng_data is None:
+            logger.warning("Данные USER_CNG не загружены. Пропуск генерации листов с фактами.")
+        else:
+            logger.info("Начало генерации листов с фактами")
+            logger.debug(f"Конфигурация генератора листов с фактами: выходная директория={fact_sheets_config.get('output_dir', 'OUT')} [class: main | def: main]")
             
-            # Проверяем, что необходимые данные загружены
-            if 'client_cng_data' not in locals() or client_cng_data is None:
-                logger.warning("Данные CLIENT_CNG не загружены. Пропуск генерации листов с фактами.")
-            elif user_cng_data is None:
-                logger.warning("Данные USER_CNG не загружены. Пропуск генерации листов с фактами.")
-            else:
-                logger.info("Начало генерации листов с фактами")
-                logger.debug(f"Конфигурация генератора листов с фактами: выходная директория={fact_sheets_config.get('output_dir', 'OUT')} [class: main | def: main]")
-                
-                try:
-                    # Генерируем листы с фактами
-                    fact_sheets_files = generate_fact_sheets(
-                        config=fact_sheets_config,
-                        client_cng_data=client_cng_data,
-                        user_cng_data=user_cng_data,
-                        output_file_base=OUTPUT_FILE_BASE,
-                        output_dir=fact_sheets_config.get('output_dir', OUTPUT_DIR),
-                        logger=logger
-                    )
-                    logger.info(f"Генерация листов с фактами завершена успешно. Создано файлов: {len(fact_sheets_files)}")
-                    for file_path in fact_sheets_files:
-                        logger.info(f"  - {file_path}")
-                    
-                except Exception as e:
-                    error_msg = f"Ошибка при генерации листов с фактами: {str(e)}"
-                    logger.error(error_msg)
-                    raise
+            try:
+                fact_sheets_files = generate_fact_sheets(
+                    config=fact_sheets_config,
+                    client_cng_data=client_cng_data,
+                    user_cng_data=user_cng_data,
+                    output_file_base=OUTPUT_FILE_BASE,
+                    output_dir=fact_sheets_config.get('output_dir', OUTPUT_DIR),
+                    logger=logger
+                )
+                logger.info(f"Генерация листов с фактами завершена успешно. Создано файлов: {len(fact_sheets_files)}")
+                for file_path in fact_sheets_files:
+                    logger.info(f"  - {file_path}")
+            
+            except Exception as e:
+                error_msg = f"Ошибка при генерации листов с фактами: {str(e)}"
+                logger.error(error_msg)
+                raise
 
 
 if __name__ == "__main__":
