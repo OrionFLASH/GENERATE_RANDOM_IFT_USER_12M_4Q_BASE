@@ -66,7 +66,7 @@ LOADER_CONFIG = {
         'business_blocks': {
             'KMKKSB': {
                 'name': 'Клиентские менеджеры',
-                'count': 1600,
+                'count': 1650,
                 'gender_distribution': 0.7  # 50% мужчин, 50% женщин
             },
             'MNS': {
@@ -239,7 +239,7 @@ LOADER_CONFIG = {
         'freeze_panes': 'A2',  # Закрепление панелей: строка и колонка
         
         # Параметры генерации клиентов
-        'count': 20000,  # Количество организаций
+        'count': 25000,  # Количество организаций
         
         # Названия колонок
         'columns': {
@@ -326,13 +326,15 @@ LOADER_CONFIG = {
                 'without_manager': 0.15  # 15% без менеджера в 1 месяц
             },
             'categories': {
-                'no_change': 0.55,  # 55% не меняют менеджера с тех пор как появляются
+                # ВАЖНО: Сумма всех процентов должна быть равна 1.0 (100%)
+                'no_change': 0.60,  # 60% не меняют менеджера с тех пор как появляются
                 'change_gosb_only': 0.10,  # 10% меняют менеджера, но остаются в одном ГОСБ
-                'change_tb_only': 0.15,  # 15% меняют менеджера, но остаются в одном ТБ
-                'change_tb_gosb': 0.10,  # 10% могут менять и ТБ и ГОСБ
-                'can_remove': 0.10  # 10% могут убрать табельный (в том числе из тех, кто появился позже)
+                'change_tb_only': 0.10,  # 10% меняют менеджера, но остаются в одном ТБ
+                'change_tb_gosb': 0.15,  # 15% могут менять и ТБ и ГОСБ
+                'can_remove': 0.05  # 5% могут убрать табельный (в том числе из тех, кто появился позже)
+                # Итого: 0.60 + 0.10 + 0.10 + 0.15 + 0.05 = 1.0 (100%)
             },
-            'can_disappear': 0.05  # 5% в какой-то из месяцев могут пропасть (без табельного)
+            'can_disappear': 0.08  # 5% в какой-то из месяцев могут пропасть (без табельного)
         },
         # Бизнес-блок для распределения клиентов
         # Используем полное название, так как в USER_CNG сохраняется полное название, а не код
@@ -340,7 +342,7 @@ LOADER_CONFIG = {
         
         # Параметры для клиентов с несколькими строками
         'multiple_rows': {
-            'percentage': 0.05,  # 5% клиентов могут иметь несколько строк
+            'percentage': 0.10,  # 5% клиентов могут иметь несколько строк
             'max_repeats': 10  # Максимальное количество повторов (от 0 до 10)
         },
         
@@ -360,29 +362,31 @@ LOADER_CONFIG = {
         # Параметры для листов UP (нарастающие факты)
         'up': {
             'min_amount': 0,  # Минимальная начальная сумма
-            'max_amount': 500_000_000,  # Максимальная начальная сумма (200 млн)
+            'max_amount': 200_000_000,  # Максимальная начальная сумма (200 млн)
             'min_growth': 0,  # Минимальный прирост
             'max_growth': 100_000_000,  # Максимальный прирост (100 млн)
-            'zero_in_first_month_max_pct': 0.05,  # Максимум 5% нулевых в 1 месяц
+            'zero_in_first_month_max_pct': 0.08,  # Максимум 5% нулевых в 1 месяц
             'zero_growth_max_pct': 0.05,  # Максимум 5% приростов 0
-            'decrease_max_pct': 0.01,  # Максимум 1% клиентов могут снизить сумму относительно прошлого месяца
+            'decrease_max_pct': 0.02,  # Максимум 1% клиентов могут снизить сумму относительно прошлого месяца
             'categories': {
+                # ВАЖНО: Сумма всех процентов должна быть равна 1.0 (100%)
                 'growing': {
-                    'pct': 0.70,  # 70% клиентов растут
+                    'pct': 0.80,  # 80% клиентов растут
                     'growth_type': 'random',  # Тип роста: 'random' (рандомный) или 'percentage' (процентный)
                     'min_growth_pct': 0.01,  # Минимальный процент роста (если percentage)
                     'max_growth_pct': 0.50,  # Максимальный процент роста (если percentage)
-                    'min_growth_amount': 1_000_000,  # Минимальная сумма роста (если random)
-                    'max_growth_amount': 100_000_000  # Максимальная сумма роста (если random)
+                    'min_growth_amount': 10_000_000,  # Минимальная сумма роста (если random)
+                    'max_growth_amount': 100_000_000  # Максимальная сумма роста (если random) - 100 млн
                 },
                 'no_change': {
-                    'pct': 0.20  # 20% клиентов не меняют факт
+                    'pct': 0.10  # 10% клиентов не меняют факт
                 },
                 'decreasing': {
                     'pct': 0.10,  # 10% клиентов могут снижать
-                    'min_decrease_pct': 0.01,  # Минимальный процент снижения
-                    'max_decrease_pct': 0.10  # Максимальный процент снижения
+                    'min_decrease_pct': 0.02,  # Минимальный процент снижения
+                    'max_decrease_pct': 0.20  # Максимальный процент снижения
                 }
+                # Итого: 0.80 + 0.10 + 0.10 = 1.0 (100%)
             }
         },
         
@@ -390,11 +394,12 @@ LOADER_CONFIG = {
         'dif': {
             'min_amount': 0,  # Минимальная сумма (не может быть меньше 0)
             'max_amount': 500_000_000,  # Максимальная начальная сумма (500 млн)
-            'min_change': -50_000_000,  # Минимальное изменение (может быть отрицательным)
+            'min_change': -50_000_000,  # Минимальное изменение (может быть отрицательным) - минус 50 млн
             'max_change': 100_000_000,  # Максимальное изменение (100 млн)
             'categories': {
+                # ВАЖНО: Сумма всех процентов должна быть равна 1.0 (100%)
                 'start_with_zero': {
-                    'pct': 0.15  # 15% КМ стартуют с 0
+                    'pct': 0.10  # 10% КМ стартуют с 0
                 },
                 'decreasing_debt': {
                     'pct': 0.25,  # 25% снижают долг
@@ -404,26 +409,29 @@ LOADER_CONFIG = {
                 'seasonal': {
                     'pct': 0.30,  # 30% двигаются сезонно
                     'seasonal_pattern': 'up_down',  # Паттерн: 'up_down' (вверх-вниз) или 'down_up' (вниз-вверх)
-                    'min_seasonal_change': 10_000_000,  # Минимальное сезонное изменение
-                    'max_seasonal_change': 80_000_000  # Максимальное сезонное изменение
+                    'min_seasonal_change': 30_000_000,  # Минимальное сезонное изменение (30 млн)
+                    'max_seasonal_change': 80_000_000  # Максимальное сезонное изменение (80 млн)
                 },
                 'fall_to_zero_no_recovery': {
                     'pct': 0.10,  # 10% падают до 0 без восстановления
-                    'months_to_zero': [3, 4, 5, 6, 7, 8, 9]  # Месяцы, когда может упасть до 0
+                    'months_to_zero': [3, 4, 5, 8, 9]  # Месяцы, когда может упасть до 0
                 },
                 'normal_movement': {
-                    'pct': 0.20  # 20% нормальное движение (может расти и падать)
+                    'pct': 0.25  # 25% нормальное движение (может расти и падать)
                 }
+                # Итого: 0.10 + 0.25 + 0.30 + 0.10 + 0.25 = 1.0 (100%)
             }
         },
         
         # Параметры для создания отдельных файлов (копий листов)
-        # Формат: список словарей, каждый словарь содержит 'months' (список месяцев) и 'fact_type' ('UP' или 'DIF')
-        # Пример: [{'months': [1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12], 'fact_type': 'UP'}, {'months': [3], 'fact_type': 'DIF'}]
+        # Формат: список словарей, каждый словарь содержит 'months' (список месяцев), 'fact_type' ('UP' или 'DIF') и 'prefix' (префикс для имени файла: 'OD', 'RA', 'PS')
+        # Пример: [{'months': [1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12], 'fact_type': 'UP', 'prefix': 'OD'}, {'months': [3], 'fact_type': 'DIF', 'prefix': 'RA'}]
+        # Имя файла формируется как: M-{month}_{prefix}_{fact_type}_{timestamp}.xlsx
         # Если пустой список - отдельные файлы не создаются, только листы в основном файле
         'selected_months': [
-            {'months': [8, 9, 10], 'fact_type': 'UP'},
-            {'months': [9, 10], 'fact_type': 'DIF'}
+            {'months': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], 'fact_type': 'UP', 'prefix': 'OD'},
+            {'months': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], 'fact_type': 'DIF', 'prefix': 'RA'},
+            {'months': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], 'fact_type': 'DIF', 'prefix': 'PS'}
         ],
         
         # Параметры для добавления данных клиентских менеджеров
@@ -2679,12 +2687,31 @@ class ClientChangeGenerator:
         df = clients_df.copy()
         n = len(df)
         
+        # Проверяем и нормализуем проценты, чтобы сумма была 100%
+        total_percentage = sum(self.categories.values())
+        if abs(total_percentage - 1.0) > 0.001:  # Допускаем небольшую погрешность
+            self.logger.warning(f"Сумма процентов категорий не равна 100%: {total_percentage * 100:.1f}%. Нормализуем до 100% [class: ClientChangeGenerator | def: _categorize_clients]")
+            # Нормализуем проценты
+            normalized_categories = {k: v / total_percentage for k, v in self.categories.items()}
+        else:
+            normalized_categories = self.categories
+        
         # Определяем количество клиентов в каждой категории
-        n_no_change = int(n * self.categories['no_change'])
-        n_change_gosb = int(n * self.categories['change_gosb_only'])
-        n_change_tb = int(n * self.categories['change_tb_only'])
-        n_change_tb_gosb = int(n * self.categories['change_tb_gosb'])
-        n_can_remove = int(n * self.categories['can_remove'])
+        n_no_change = int(n * normalized_categories['no_change'])
+        n_change_gosb = int(n * normalized_categories['change_gosb_only'])
+        n_change_tb = int(n * normalized_categories['change_tb_only'])
+        n_change_tb_gosb = int(n * normalized_categories['change_tb_gosb'])
+        n_can_remove = int(n * normalized_categories['can_remove'])
+        
+        # Вычисляем остаток для категории 'new_client'
+        total_assigned = n_no_change + n_change_gosb + n_change_tb + n_change_tb_gosb + n_can_remove
+        n_new_client = n - total_assigned
+        
+        # Если остаток отрицательный (сумма процентов > 100%), уменьшаем последнюю категорию
+        if n_new_client < 0:
+            self.logger.warning(f"Сумма процентов категорий превышает 100%. Уменьшаем категорию 'can_remove' на {abs(n_new_client)} [class: ClientChangeGenerator | def: _categorize_clients]")
+            n_can_remove += n_new_client  # n_new_client отрицательный, поэтому добавляем его
+            n_new_client = 0
         
         # Создаем список категорий
         categories = (
@@ -2693,11 +2720,18 @@ class ClientChangeGenerator:
             ['change_tb_only'] * n_change_tb +
             ['change_tb_gosb'] * n_change_tb_gosb +
             ['can_remove'] * n_can_remove +
-            ['new_client'] * (n - n_no_change - n_change_gosb - n_change_tb - n_change_tb_gosb - n_can_remove)
+            ['new_client'] * n_new_client
         )
         
         # Перемешиваем и присваиваем
         self.random.shuffle(categories)
+        
+        # Проверяем, что длина списка категорий совпадает с количеством строк
+        if len(categories) != len(df):
+            self.logger.error(f"Несоответствие длины: categories={len(categories)}, df={len(df)} [class: ClientChangeGenerator | def: _categorize_clients]")
+            self.logger.error(f"Распределение: no_change={n_no_change}, change_gosb={n_change_gosb}, change_tb={n_change_tb}, change_tb_gosb={n_change_tb_gosb}, can_remove={n_can_remove}, new_client={n_new_client} [class: ClientChangeGenerator | def: _categorize_clients]")
+            raise ValueError(f"Длина списка категорий ({len(categories)}) не совпадает с количеством строк в DataFrame ({len(df)})")
+        
         df['category'] = categories
         
         self.logger.debug(f"Категоризация клиентов: no_change={n_no_change}, change_gosb={n_change_gosb}, change_tb={n_change_tb}, change_tb_gosb={n_change_tb_gosb}, can_remove={n_can_remove}, new={n - n_no_change - n_change_gosb - n_change_tb - n_change_tb_gosb - n_can_remove} [class: ClientChangeGenerator | def: _categorize_clients]")
@@ -2737,15 +2771,28 @@ class ClientChangeGenerator:
             n_repeats = self.random.randint(0, max_repeats)
             
             # Добавляем основную строку
-            expanded_clients.append(client.to_dict())
+            client_dict = client.to_dict()
+            expanded_clients.append(client_dict)
             
             # Добавляем дополнительные строки
             for _ in range(n_repeats):
-                expanded_clients.append(client.to_dict())
+                # Создаем копию словаря, чтобы избежать проблем с ссылками
+                expanded_clients.append(client_dict.copy())
         
         self.logger.debug(f"Подготовлено клиентов: {len(clients_df)} исходных, {len(expanded_clients)} после добавления повторов [class: ClientChangeGenerator | def: _prepare_clients_with_multiple_rows]")
         
-        return pd.DataFrame(expanded_clients)
+        # Проверяем, что все записи имеют одинаковые ключи
+        if expanded_clients:
+            first_keys = set(expanded_clients[0].keys())
+            for i, client_dict in enumerate(expanded_clients):
+                client_keys = set(client_dict.keys())
+                if client_keys != first_keys:
+                    self.logger.warning(f"Клиент {i} имеет разные ключи: ожидалось {first_keys}, получено {client_keys} [class: ClientChangeGenerator | def: _prepare_clients_with_multiple_rows]")
+        
+        result_df = pd.DataFrame(expanded_clients)
+        self.logger.debug(f"DataFrame создан из expanded_clients: {len(result_df)} строк, {len(result_df.columns)} колонок [class: ClientChangeGenerator | def: _prepare_clients_with_multiple_rows]")
+        
+        return result_df
     
     def _preload_managers_data(self) -> Dict:
         """
@@ -2828,26 +2875,39 @@ class ClientChangeGenerator:
         # Подготавливаем клиентов с несколькими строками
         clients_df = self._prepare_clients_with_multiple_rows(clients_df)
         
-        # Предзагружаем данные о менеджерах для всех месяцев (оптимизация)
-        managers_cache = self._preload_managers_data()
-        
-        result_data = []
+        # Сбрасываем индексы, чтобы они были последовательными 0, 1, 2, ...
+        clients_df = clients_df.reset_index(drop=True)
         
         # Получаем форматы
         formats_config = self.config.get('formats', {})
         inn_length = formats_config.get('inn_length', 12)
         tab_number_length = formats_config.get('tab_number_length', 8)
         
+        # Предзагружаем данные о менеджерах для всех месяцев (оптимизация)
+        managers_cache = self._preload_managers_data()
+        
+        # Инициализируем result_data для всех клиентов заранее
+        result_data = []
+        self.logger.debug(f"Инициализация result_data для {len(clients_df)} клиентов [class: ClientChangeGenerator | def: _simulate_client_movements]")
+        for idx, (_, client) in enumerate(clients_df.iterrows()):
+            result_data.append({
+                'ИНН': str(client['ИНН']).zfill(inn_length),
+                'Наименование': client['Наименование']
+            })
+        self.logger.debug(f"Инициализировано {len(result_data)} записей в result_data [class: ClientChangeGenerator | def: _simulate_client_movements]")
+        
         # Инициализация: 85% с менеджером, 15% без менеджера в 1 месяц
         n_with_manager = int(len(clients_df) * self.initial_distribution['with_manager'])
-        clients_shuffled = clients_df.sample(frac=1, random_state=None).reset_index(drop=True)
-        clients_with_manager = clients_shuffled.head(n_with_manager)
-        clients_without_manager = clients_shuffled.tail(len(clients_shuffled) - n_with_manager)
+        # Создаем перетасованный список индексов для случайного выбора клиентов
+        indices = list(range(len(clients_df)))
+        self.random.shuffle(indices)
+        indices_with_manager = indices[:n_with_manager]
+        indices_without_manager = indices[n_with_manager:]
         
-        # Словари для отслеживания состояния клиентов (по строке, не по ИНН)
-        client_current_manager = {}  # Ключ: индекс строки
+        # Словари для отслеживания состояния клиентов (по позиционному индексу в clients_df)
+        client_current_manager = {}  # Ключ: позиционный индекс (0, 1, 2, ...)
         client_appeared = {}  # Когда клиент появился (получил менеджера)
-        client_disappeared = set()  # Индексы строк клиентов, которые пропали
+        client_disappeared = set()  # Позиционные индексы строк клиентов, которые пропали
         
         # Инициализируем клиентов с менеджерами
         available_managers_month1 = self._get_available_managers_from_cache(1, managers_cache)
@@ -2855,8 +2915,7 @@ class ClientChangeGenerator:
         if len(available_managers_month1) == 0:
             self.logger.warning(f"Не найдено доступных менеджеров в 1 месяц [class: ClientChangeGenerator | def: _simulate_client_movements]")
         
-        for idx, (_, client) in enumerate(clients_with_manager.iterrows()):
-            inn = str(client['ИНН']).zfill(inn_length)
+        for idx in indices_with_manager:
             if available_managers_month1:
                 manager_tab = self.random.choice(available_managers_month1)
                 client_current_manager[idx] = manager_tab
@@ -2866,8 +2925,7 @@ class ClientChangeGenerator:
                 client_appeared[idx] = None
         
         # Инициализируем клиентов без менеджеров
-        for idx, (_, client) in enumerate(clients_without_manager.iterrows(), start=len(clients_with_manager)):
-            inn = str(client['ИНН']).zfill(inn_length)
+        for idx in indices_without_manager:
             client_current_manager[idx] = None
             client_appeared[idx] = None
         
@@ -2881,10 +2939,14 @@ class ClientChangeGenerator:
             if len(available_managers) == 0:
                 self.logger.warning(f"Не найдено доступных менеджеров в месяц {month} [class: ClientChangeGenerator | def: _simulate_client_movements]")
             
+            # Используем позиционные индексы (0, 1, 2, ...)
             for idx, (_, client) in enumerate(clients_df.iterrows()):
                 inn = str(client['ИНН']).zfill(inn_length)
                 category = client['category']
                 current_manager = client_current_manager.get(idx)
+                
+                # Получаем существующую запись из result_data (она уже создана для всех клиентов)
+                result_row = result_data[idx]
                 
                 # Если клиент пропал - остается пропавшим
                 if idx in client_disappeared:
@@ -3022,26 +3084,6 @@ class ClientChangeGenerator:
                             # Остается с текущим менеджером
                             manager_info = current_info
                 
-                # Сохраняем данные для этого месяца
-                if month == 1:
-                    # Первый месяц - создаем запись
-                    result_row = {
-                        'ИНН': inn,
-                        'Наименование': client['Наименование']
-                    }
-                    result_data.append(result_row)
-                else:
-                    # Находим существующую запись по индексу (не по ИНН, т.к. ИНН может повторяться)
-                    if idx < len(result_data):
-                        result_row = result_data[idx]
-                    else:
-                        # Если индекс больше длины - создаем новую запись
-                        result_row = {
-                            'ИНН': inn,
-                            'Наименование': client['Наименование']
-                        }
-                        result_data.append(result_row)
-                
                 # Добавляем данные месяца (форматируем табельный номер)
                 tab_number = manager_info['Табельный номер']
                 if tab_number != '-':
@@ -3054,8 +3096,25 @@ class ClientChangeGenerator:
                 result_row[f'Месяц_{month}_Полное ГОСБ'] = manager_info['Полное ГОСБ']
         
         self.logger.info(f"Симуляция завершена. Обработано {len(result_data)} клиентов")
+        self.logger.debug(f"Количество записей в result_data: {len(result_data)}, количество строк в clients_df: {len(clients_df)} [class: ClientChangeGenerator | def: _simulate_client_movements]")
         
-        return pd.DataFrame(result_data)
+        # Проверяем, что все записи имеют одинаковое количество ключей
+        if result_data:
+            first_keys = set(result_data[0].keys())
+            for i, row in enumerate(result_data):
+                row_keys = set(row.keys())
+                if row_keys != first_keys:
+                    self.logger.warning(f"Запись {i} имеет разные ключи: ожидалось {first_keys}, получено {row_keys} [class: ClientChangeGenerator | def: _simulate_client_movements]")
+        
+        # Создаем DataFrame
+        try:
+            df = pd.DataFrame(result_data)
+            self.logger.debug(f"DataFrame создан: {len(df)} строк, {len(df.columns)} колонок [class: ClientChangeGenerator | def: _simulate_client_movements]")
+            return df
+        except Exception as e:
+            self.logger.error(f"Ошибка при создании DataFrame: {e} [class: ClientChangeGenerator | def: _simulate_client_movements]")
+            self.logger.debug(f"Первые 3 записи result_data: {result_data[:3] if len(result_data) >= 3 else result_data} [class: ClientChangeGenerator | def: _simulate_client_movements]")
+            raise
     
     def save_to_excel(self, df: pd.DataFrame) -> str:
         """
@@ -3091,8 +3150,18 @@ class ClientChangeGenerator:
                 f'Месяц_{month}_Полное ГОСБ'
             ])
         
+        # Проверяем наличие всех необходимых колонок
+        missing_columns = [col for col in column_order if col not in df.columns]
+        if missing_columns:
+            self.logger.warning(f"Отсутствуют колонки: {missing_columns} [class: ClientChangeGenerator | def: save_to_excel]")
+            # Добавляем отсутствующие колонки с пустыми значениями
+            for col in missing_columns:
+                df[col] = '-'
+        
         # Переупорядочиваем колонки
         df = df[column_order]
+        
+        self.logger.debug(f"DataFrame перед форматированием: {len(df)} строк, {len(df.columns)} колонок [class: ClientChangeGenerator | def: save_to_excel]")
         
         # Форматируем ИНН и табельные номера с лидирующими нулями
         formats_config = self.config.get('formats', {})
@@ -3100,7 +3169,8 @@ class ClientChangeGenerator:
         tab_number_length = formats_config.get('tab_number_length', 8)
         
         # Форматируем ИНН
-        df['ИНН'] = df['ИНН'].astype(str).apply(lambda x: x.zfill(inn_length) if x != 'nan' and str(x).strip() != '' else x)
+        if 'ИНН' in df.columns:
+            df['ИНН'] = df['ИНН'].astype(str).apply(lambda x: x.zfill(inn_length) if x != 'nan' and str(x).strip() != '' else x)
         
         # Форматируем табельные номера во всех месяцах
         for month in range(1, self.months + 1):
@@ -3982,7 +4052,7 @@ class FactSheetGenerator:
         
         self.logger.debug(f"Добавлен лист {sheet_name} в основной файл [class: FactSheetGenerator | def: _save_sheet_to_main_file]")
     
-    def _save_month_sheet(self, df: pd.DataFrame, month: int, fact_type: str) -> str:
+    def _save_month_sheet(self, df: pd.DataFrame, month: int, fact_type: str, prefix: str = '') -> str:
         """
         Сохраняет лист для указанного месяца в отдельный Excel файл.
         
@@ -3990,13 +4060,18 @@ class FactSheetGenerator:
             df: DataFrame с данными для сохранения
             month: Номер месяца (1-12)
             fact_type: Тип факта ('UP' или 'DIF')
+            prefix: Префикс для имени файла ('OD', 'RA', 'PS' и т.д.)
             
         Returns:
             Путь к созданному файлу
         """
-        # Формируем имя файла: M-{month}_{fact_type}_{timestamp}
+        # Формируем имя файла: M-{month}_{prefix}_{fact_type}_{timestamp}
         timestamp = datetime.now().strftime("%Y%m%d_%H%M")
-        filename = f"M-{month}_{fact_type}_{timestamp}.xlsx"
+        if prefix:
+            filename = f"M-{month}_{prefix}_{fact_type}_{timestamp}.xlsx"
+        else:
+            # Обратная совместимость: если префикс не указан, используем старый формат
+            filename = f"M-{month}_{fact_type}_{timestamp}.xlsx"
         filepath = self.output_dir / filename
         
         # Формируем колонки для сохранения
@@ -4115,15 +4190,17 @@ class FactSheetGenerator:
             self.logger.info(f"Создание нового файла для листов с фактами: {excel_path.name}")
             file_mode = 'w'
         
-        # Собираем уникальные пары (месяц, тип факта) для отдельных файлов
+        # Собираем уникальные тройки (месяц, тип факта, префикс) для отдельных файлов
         selected_pairs = []
         seen_pairs = set()
         for selection in self.selected_months:
             months = selection.get('months', [])
             fact_type = str(selection.get('fact_type', 'UP')).strip().upper() or 'UP'
+            prefix = str(selection.get('prefix', '')).strip().upper() or ''
             for month in months:
                 if 1 <= month <= 12:
-                    pair = (month, fact_type)
+                    # Используем тройку (месяц, тип факта, префикс) для уникальности
+                    pair = (month, fact_type, prefix)
                     if pair not in seen_pairs:
                         seen_pairs.add(pair)
                         selected_pairs.append(pair)
@@ -4183,19 +4260,19 @@ class FactSheetGenerator:
         
         # Затем создаем отдельные файлы только для выбранных месяцев
         if selected_pairs:
-            self.logger.info(f"Создание отдельных файлов для {len(selected_pairs)} уникальных комбинаций месяц/тип")
+            self.logger.info(f"Создание отдельных файлов для {len(selected_pairs)} уникальных комбинаций месяц/тип/префикс")
             
-            for month, fact_type in sorted(selected_pairs, key=lambda x: (x[0], x[1])):
-                self.logger.info(f"Создание отдельного файла для месяца {month} типа {fact_type}")
+            for month, fact_type, prefix in sorted(selected_pairs, key=lambda x: (x[0], x[1], x[2])):
+                self.logger.info(f"Создание отдельного файла для месяца {month} типа {fact_type} с префиксом {prefix}")
                 
                 # Используем уже сгенерированные данные из основного файла
                 key = (month, fact_type)
                 if key in generated_data:
                     clients_df = generated_data[key]
-                    # Сохраняем в отдельный файл
-                    filepath = self._save_month_sheet(clients_df, month, fact_type)
+                    # Сохраняем в отдельный файл с указанным префиксом
+                    filepath = self._save_month_sheet(clients_df, month, fact_type, prefix)
                     created_files.append(filepath)
-                    self.logger.info(f"Создан отдельный файл для месяца {month} типа {fact_type}: {len(clients_df)} клиентов")
+                    self.logger.info(f"Создан отдельный файл для месяца {month} типа {fact_type} с префиксом {prefix}: {len(clients_df)} клиентов")
                 else:
                     self.logger.warning(f"Не найдены данные для месяца {month} типа {fact_type}")
         else:
