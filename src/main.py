@@ -669,13 +669,23 @@ class ProjectLogger:
         Args:
             debug_formatter: Форматтер для DEBUG логов
         """
-        # Перенаправляем warnings в логгер
-        def warning_to_logger(message, category, filename, lineno, file=None, line=None):
-            warning_msg = f"{category.__name__}: {message}"
-            self.logger.debug(warning_msg)
+        # Получаем обработчик DEBUG для записи warnings
+        debug_handler = None
+        for handler in self.logger.handlers:
+            if isinstance(handler, logging.FileHandler) and handler.level == logging.DEBUG:
+                debug_handler = handler
+                break
         
-        # Устанавливаем обработчик warnings
-        warnings.showwarning = warning_to_logger
+        if debug_handler:
+            # Перенаправляем warnings в логгер
+            def warning_to_logger(message, category, filename, lineno, file=None, line=None):
+                warning_msg = f"{category.__name__}: {str(message).strip()} (файл: {filename}, строка: {lineno})"
+                self.logger.debug(warning_msg)
+            
+            # Устанавливаем обработчик warnings
+            warnings.showwarning = warning_to_logger
+            # Включаем отображение всех warnings
+            warnings.filterwarnings('always')
     
     def get_logger(self) -> logging.Logger:
         """
@@ -3589,7 +3599,7 @@ class FactSheetGenerator:
         
         return filtered
     
-    def _duplicate_rows(self, clients_df: pd.DataFrame, month: int, target_total_rows: int) -> pd.DataFrame:
+    def _duplicate_rows(self, clients_df: pd.DataFrame, month: int, target_total_rows: int, random_gen: Optional[random.Random] = None) -> pd.DataFrame:
         """
         Дублирует строки клиентов согласно конфигурации.
         
@@ -3611,6 +3621,9 @@ class FactSheetGenerator:
         duplicates_10_50_pct = distribution.get('duplicates_10_50', 0.05)
         
         same_org_pct = self.duplication_config.get('same_org_unit_pct', 0.60)
+        
+        # Используем переданный генератор или self.random
+        rng = random_gen if random_gen is not None else self.random
         
         # Вычисляем количество строк для каждой категории
         total_base = len(clients_df)
@@ -3651,12 +3664,12 @@ class FactSheetGenerator:
             if idx >= len(clients_df):
                 idx = 0  # Начинаем заново, если нужно
             base_row = clients_df.iloc[idx % len(clients_df)].copy()
-            num_duplicates = self.random.randint(2, 6)  # 2-5 дублей
+            num_duplicates = rng.randint(2, 6)  # 2-5 дублей
             
             for dup in range(num_duplicates):
                 dup_row = base_row.copy()
                 # 60% тот же ТБ/ГОСБ, 40% другие
-                if self.random.random() < same_org_pct:
+                if rng.random() < same_org_pct:
                     # Оставляем тот же ТБ/ГОСБ
                     pass
                 else:
@@ -3678,11 +3691,11 @@ class FactSheetGenerator:
             if idx >= len(clients_df):
                 idx = 0
             base_row = clients_df.iloc[idx % len(clients_df)].copy()
-            num_duplicates = self.random.randint(6, 10)  # 6-9 дублей
+            num_duplicates = rng.randint(6, 10)  # 6-9 дублей
             
             for dup in range(num_duplicates):
                 dup_row = base_row.copy()
-                if self.random.random() < same_org_pct:
+                if rng.random() < same_org_pct:
                     pass
                 else:
                     if len(available_org_units) > 0:
@@ -3701,11 +3714,11 @@ class FactSheetGenerator:
             if idx >= len(clients_df):
                 idx = 0
             base_row = clients_df.iloc[idx % len(clients_df)].copy()
-            num_duplicates = self.random.randint(10, 51)  # 10-50 дублей
+            num_duplicates = rng.randint(10, 51)  # 10-50 дублей
             
             for dup in range(num_duplicates):
                 dup_row = base_row.copy()
-                if self.random.random() < same_org_pct:
+                if rng.random() < same_org_pct:
                     pass
                 else:
                     if len(available_org_units) > 0:
@@ -3722,10 +3735,10 @@ class FactSheetGenerator:
         # Если нужно больше строк, добавляем случайные дубликаты
         while len(result_rows) < target_total_rows and len(clients_df) > 0:
             # Используем randrange чтобы избежать выхода за границы (0 до len-1 включительно)
-            row_idx = self.random.randrange(0, len(clients_df))
+            row_idx = rng.randrange(0, len(clients_df))
             base_row = clients_df.iloc[row_idx].copy()
             dup_row = base_row.copy()
-            if self.random.random() >= same_org_pct and len(available_org_units) > 0:
+            if rng.random() >= same_org_pct and len(available_org_units) > 0:
                 try:
                     new_org = available_org_units.sample(n=1, random_state=None).iloc[0]
                     dup_row[org_code_col] = new_org[org_code_col]
@@ -3744,7 +3757,7 @@ class FactSheetGenerator:
         
         return result_df
     
-    def _redistribute_managers_and_inns(self, clients_df: pd.DataFrame, month: int) -> pd.DataFrame:
+    def _redistribute_managers_and_inns(self, clients_df: pd.DataFrame, month: int, random_gen: Optional[random.Random] = None) -> pd.DataFrame:
         """
         Перераспределяет табельные номера менеджеров и ИНН по месяцам для варианта.
         Использует изначально сгенерированные ТН и ИНН, но меняет их распределение.
@@ -3774,20 +3787,23 @@ class FactSheetGenerator:
         all_inns = self.client_cng_data[inn_col].astype(str).unique()
         all_inns = [i for i in all_inns if i != 'nan' and not pd.isna(i)]
         
+        # Используем переданный генератор или self.random
+        rng = random_gen if random_gen is not None else self.random
+        
         # Выбираем случайный процент использования исходных данных
         # Табельные номера: от 85% до 100%
-        tabs_pct = self.random.uniform(0.85, 1.0)
+        tabs_pct = rng.uniform(0.85, 1.0)
         tabs_count = max(1, int(len(all_tabs) * tabs_pct))
         selected_tabs = all_tabs[:tabs_count]
         
         # ИНН: от 70% до 100%
-        inns_pct = self.random.uniform(0.70, 1.0)
+        inns_pct = rng.uniform(0.70, 1.0)
         inns_count = max(1, int(len(all_inns) * inns_pct))
         selected_inns = all_inns[:inns_count]
         
         # Перемешиваем для случайного распределения
-        self.random.shuffle(selected_tabs)
-        self.random.shuffle(selected_inns)
+        rng.shuffle(selected_tabs)
+        rng.shuffle(selected_inns)
         
         self.logger.debug(f"Использовано {len(selected_tabs)} из {len(all_tabs)} табельных номеров ({tabs_pct*100:.1f}%) и {len(selected_inns)} из {len(all_inns)} ИНН ({inns_pct*100:.1f}%) для месяца {month} [class: FactSheetGenerator | def: _redistribute_managers_and_inns]")
         
@@ -3846,7 +3862,7 @@ class FactSheetGenerator:
         
         return result_df
     
-    def _generate_up_facts(self, clients_df: pd.DataFrame, month: int, prefix: str = '') -> pd.DataFrame:
+    def _generate_up_facts(self, clients_df: pd.DataFrame, month: int, prefix: str = '', random_gen: Optional[random.Random] = None) -> pd.DataFrame:
         """
         Генерирует нарастающие факты (UP) для клиентов.
         
@@ -3859,6 +3875,9 @@ class FactSheetGenerator:
         """
         result_df = clients_df.copy()
         fact_col = f'Месяц_{month}_Факт'
+        
+        # Используем переданный генератор или self.random
+        rng = random_gen if random_gen is not None else self.random
         
         # Категоризируем клиентов
         categories = self.up_config.get('categories', {})
@@ -3926,9 +3945,9 @@ class FactSheetGenerator:
                 
                 # Если клиент появился впервые в этом месяце, используем случайную начальную сумму
                 if prev_fact == 0:
-                    prev_fact = self.random.randint(min_amount, max_amount)
+                    prev_fact = rng.randint(min_amount, max_amount)
                 
-                rand = self.random.random()
+                rand = rng.random()
                 
                 # Определяем категорию клиента
                 if rand < decreasing_pct and decrease_idx < decrease_count:
@@ -3937,14 +3956,14 @@ class FactSheetGenerator:
                     decrease_config = categories.get('decreasing', {})
                     min_decrease_pct = decrease_config.get('min_decrease_pct', 0.01)
                     max_decrease_pct = decrease_config.get('max_decrease_pct', 0.10)
-                    decrease_pct_val = self.random.uniform(min_decrease_pct, max_decrease_pct)
+                    decrease_pct_val = rng.uniform(min_decrease_pct, max_decrease_pct)
                     new_fact = int(prev_fact * (1 - decrease_pct_val))
                 elif rand < decreasing_pct + no_change_pct:
                     # Без изменений
                     new_fact = prev_fact
                 elif rand < decreasing_pct + no_change_pct + growing_pct:
                     # Рост
-                    if zero_growth_idx < zero_growth_count and self.random.random() < 0.1:
+                    if zero_growth_idx < zero_growth_count and rng.random() < 0.1:
                         # Нулевой прирост (не более 5%)
                         zero_growth_idx += 1
                         new_fact = prev_fact
@@ -3956,13 +3975,13 @@ class FactSheetGenerator:
                         if growth_type == 'percentage':
                             min_growth_pct = growth_config.get('min_growth_pct', 0.01)
                             max_growth_pct = growth_config.get('max_growth_pct', 0.50)
-                            growth_pct = self.random.uniform(min_growth_pct, max_growth_pct)
+                            growth_pct = rng.uniform(min_growth_pct, max_growth_pct)
                             new_fact = int(prev_fact * (1 + growth_pct))
                         else:
                             # random
                             min_growth_amount = growth_config.get('min_growth_amount', 1_000_000)
                             max_growth_amount = growth_config.get('max_growth_amount', 100_000_000)
-                            growth = self.random.randint(min_growth_amount, max_growth_amount)
+                            growth = rng.randint(min_growth_amount, max_growth_amount)
                             new_fact = prev_fact + growth
                 else:
                     # По умолчанию - без изменений
@@ -3981,7 +4000,7 @@ class FactSheetGenerator:
         result_df[fact_col] = facts
         return result_df
     
-    def _generate_dif_facts(self, clients_df: pd.DataFrame, month: int, prefix: str = '') -> pd.DataFrame:
+    def _generate_dif_facts(self, clients_df: pd.DataFrame, month: int, prefix: str = '', random_gen: Optional[random.Random] = None) -> pd.DataFrame:
         """
         Генерирует дифференциальные факты (DIF) для клиентов.
         
@@ -3994,6 +4013,9 @@ class FactSheetGenerator:
         """
         result_df = clients_df.copy()
         fact_col = f'Месяц_{month}_Факт'
+        
+        # Используем переданный генератор или self.random
+        rng = random_gen if random_gen is not None else self.random
         
         # Категоризируем клиентов
         categories = self.dif_config.get('categories', {})
@@ -4061,9 +4083,9 @@ class FactSheetGenerator:
                 
                 # Если клиент появился впервые в этом месяце, используем случайную начальную сумму
                 if prev_fact == 0:
-                    prev_fact = self.random.randint(min_amount, max_amount)
+                    prev_fact = rng.randint(min_amount, max_amount)
                 
-                rand = self.random.random()
+                rand = rng.random()
                 
                 # Определяем категорию клиента
                 if rand < start_with_zero_pct:
@@ -4074,7 +4096,7 @@ class FactSheetGenerator:
                     decrease_config = categories.get('decreasing_debt', {})
                     min_decrease_pct = decrease_config.get('min_decrease_pct', 0.05)
                     max_decrease_pct = decrease_config.get('max_decrease_pct', 0.50)
-                    decrease_pct = self.random.uniform(min_decrease_pct, max_decrease_pct)
+                    decrease_pct = rng.uniform(min_decrease_pct, max_decrease_pct)
                     new_fact = max(0, int(prev_fact * (1 - decrease_pct)))  # Не может быть меньше 0
                 elif rand < start_with_zero_pct + decreasing_debt_pct + seasonal_pct:
                     # Сезонное движение
@@ -4086,15 +4108,15 @@ class FactSheetGenerator:
                     if pattern == 'up_down':
                         # Вверх-вниз: первые 6 месяцев растут, последние 6 падают
                         if month <= 6:
-                            change = self.random.randint(min_seasonal, max_seasonal)
+                            change = rng.randint(min_seasonal, max_seasonal)
                         else:
-                            change = -self.random.randint(min_seasonal, max_seasonal)
+                            change = -rng.randint(min_seasonal, max_seasonal)
                     else:  # down_up
                         # Вниз-вверх: первые 6 месяцев падают, последние 6 растут
                         if month <= 6:
-                            change = -self.random.randint(min_seasonal, max_seasonal)
+                            change = -rng.randint(min_seasonal, max_seasonal)
                         else:
-                            change = self.random.randint(min_seasonal, max_seasonal)
+                            change = rng.randint(min_seasonal, max_seasonal)
                     
                     new_fact = max(0, prev_fact + change)  # Не может быть меньше 0
                 elif rand < start_with_zero_pct + decreasing_debt_pct + seasonal_pct + fall_to_zero_pct:
@@ -4104,11 +4126,11 @@ class FactSheetGenerator:
                         new_fact = 0
                     else:
                         # Остается на текущем уровне или немного меняется
-                        change = self.random.randint(min_change, max_change)
+                        change = rng.randint(min_change, max_change)
                         new_fact = max(0, prev_fact + change)
                 else:
                     # Нормальное движение (может расти и падать)
-                    change = self.random.randint(min_change, max_change)
+                    change = rng.randint(min_change, max_change)
                     new_fact = max(0, prev_fact + change)  # Не может быть меньше 0
                 
                 facts.append(new_fact)
@@ -4594,8 +4616,14 @@ class FactSheetGenerator:
             Путь к созданному файлу или None в случае ошибки
         """
         try:
+            # Создаем отдельный генератор случайных чисел для этого потока
+            # Это необходимо для потокобезопасности
+            import threading
+            thread_local_random = random.Random()
+            thread_local_random.seed()
+            
             # Определяем целевое количество строк для этого файла
-            target_total_rows = self.random.randint(
+            target_total_rows = thread_local_random.randint(
                 self.total_rows_range.get('min', 150_000),
                 self.total_rows_range.get('max', 600_000)
             )
@@ -4611,18 +4639,18 @@ class FactSheetGenerator:
                     self.logger.warning(f"Не найдено клиентов для месяца {month} варианта {prefix}")
                     return None
                 
-                # Дублируем строки
-                if self.duplication_enabled:
-                    clients_df = self._duplicate_rows(clients_df, month, target_total_rows)
+                    # Дублируем строки
+                    if self.duplication_enabled:
+                        clients_df = self._duplicate_rows(clients_df, month, target_total_rows, thread_local_random)
+                    
+                    # Перераспределяем табельные номера и ИНН
+                    clients_df = self._redistribute_managers_and_inns(clients_df, month, thread_local_random)
                 
-                # Перераспределяем табельные номера и ИНН
-                clients_df = self._redistribute_managers_and_inns(clients_df, month)
-                
-                # Генерируем факты заново для этого варианта
-                if fact_type == 'UP':
-                    clients_df = self._generate_up_facts(clients_df, month, prefix)
-                else:
-                    clients_df = self._generate_dif_facts(clients_df, month, prefix)
+                    # Генерируем факты заново для этого варианта
+                    if fact_type == 'UP':
+                        clients_df = self._generate_up_facts(clients_df, month, prefix, thread_local_random)
+                    else:
+                        clients_df = self._generate_dif_facts(clients_df, month, prefix, thread_local_random)
                 
                 # Добавляем данные менеджеров (если нужно)
                 clients_df = self._add_managers_data(clients_df, month)
