@@ -239,7 +239,7 @@ LOADER_CONFIG = {
         'freeze_panes': 'A2',  # Закрепление панелей: строка и колонка
         
         # Параметры генерации клиентов
-        'count': 30000,  # Количество организаций
+        'count': 100000,  # Количество организаций (100 тыс для распределения по файлам)
         
         # Названия колонок
         'columns': {
@@ -546,7 +546,7 @@ LOADER_CONFIG = {
             'different_org_unit_pct': 0.40  # 40% дублируемых строк имеют другие ТБ/ГОСБ
         },
         'total_rows_range': {
-            'min': 150_000,  # Минимальное количество строк
+            'min': 70_000,  # Минимальное количество строк
             'max': 600_000  # Максимальное количество строк
         },
         'generate_separate_data_per_variant': True,  # Генерировать отдельные данные для каждого варианта (prefix)
@@ -3629,12 +3629,33 @@ class FactSheetGenerator:
         # Используем переданный генератор или self.random
         rng = random_gen if random_gen is not None else self.random
         
-        # Вычисляем количество строк для каждой категории
-        total_base = len(clients_df)
-        no_duplicates_count = int(total_base * no_duplicates_pct)
-        duplicates_2_5_count = int(total_base * duplicates_2_5_pct)
-        duplicates_6_9_count = int(total_base * duplicates_6_9_pct)
-        duplicates_10_50_count = int(total_base * duplicates_10_50_pct)
+        # Вычисляем количество уникальных клиентов для каждой категории
+        # Распределение применяется к целевым строкам, а не к исходным клиентам
+        # Оцениваем среднее количество строк на клиента для каждой категории
+        avg_duplicates_2_5 = 3.5  # Среднее между 2 и 5
+        avg_duplicates_6_9 = 7.5  # Среднее между 6 и 9
+        avg_duplicates_10_50 = 30.0  # Среднее между 10 и 50
+        
+        # Вычисляем ожидаемое количество строк на уникального клиента для каждой категории
+        expected_rows_per_client = (
+            no_duplicates_pct * 1.0 +  # 1 строка на клиента без дублей
+            duplicates_2_5_pct * avg_duplicates_2_5 +  # Среднее 3.5 строки на клиента
+            duplicates_6_9_pct * avg_duplicates_6_9 +  # Среднее 7.5 строки на клиента
+            duplicates_10_50_pct * avg_duplicates_10_50  # Среднее 30 строк на клиента
+        )
+        
+        # Вычисляем сколько уникальных клиентов нужно для достижения целевого количества строк
+        # С запасом на случай, если реальное количество дублей будет меньше среднего
+        unique_clients_needed = int(target_total_rows / expected_rows_per_client * 1.1)  # 10% запас
+        
+        # Ограничиваем максимальным количеством доступных клиентов
+        unique_clients_needed = min(unique_clients_needed, len(clients_df))
+        
+        # Вычисляем количество уникальных клиентов для каждой категории
+        no_duplicates_count = int(unique_clients_needed * no_duplicates_pct)
+        duplicates_2_5_count = int(unique_clients_needed * duplicates_2_5_pct)
+        duplicates_6_9_count = int(unique_clients_needed * duplicates_6_9_pct)
+        duplicates_10_50_count = int(unique_clients_needed * duplicates_10_50_pct)
         
         # Создаем список для результата
         result_rows = []
@@ -3736,10 +3757,12 @@ class FactSheetGenerator:
                 result_rows.append(dup_row)
             idx += 1
         
-        # Если нужно больше строк, добавляем случайные дубликаты
+        # Если нужно больше строк, добавляем случайные дубликаты до достижения целевого количества
+        # Используем циклический доступ к клиентам
+        client_cycle_idx = 0
         while len(result_rows) < target_total_rows and len(clients_df) > 0:
-            # Используем randrange чтобы избежать выхода за границы (0 до len-1 включительно)
-            row_idx = rng.randrange(0, len(clients_df))
+            # Используем циклический доступ к клиентам
+            row_idx = client_cycle_idx % len(clients_df)
             base_row = clients_df.iloc[row_idx].copy()
             dup_row = base_row.copy()
             if rng.random() >= same_org_pct and len(available_org_units) > 0:
@@ -3751,10 +3774,15 @@ class FactSheetGenerator:
                 except (ValueError, IndexError):
                     pass
             result_rows.append(dup_row)
+            client_cycle_idx += 1
         
         # Если строк слишком много, обрезаем до целевого количества
         if len(result_rows) > target_total_rows:
             result_rows = result_rows[:target_total_rows]
+        
+        # Проверяем, что достигли целевого количества строк
+        if len(result_rows) < target_total_rows:
+            self.logger.warning(f"Не удалось достичь целевого количества строк: {len(result_rows)} из {target_total_rows} для месяца {month} [class: FactSheetGenerator | def: _duplicate_rows]")
         
         result_df = pd.DataFrame(result_rows).reset_index(drop=True)
         self.logger.debug(f"Дублирование строк для месяца {month}: {len(clients_df)} -> {len(result_df)} строк [class: FactSheetGenerator | def: _duplicate_rows]")
