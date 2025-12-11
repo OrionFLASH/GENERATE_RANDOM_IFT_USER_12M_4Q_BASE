@@ -549,7 +549,8 @@ LOADER_CONFIG = {
             'min': 150_000,  # Минимальное количество строк
             'max': 600_000  # Максимальное количество строк
         },
-        'generate_separate_data_per_variant': True  # Генерировать отдельные данные для каждого варианта (prefix)
+        'generate_separate_data_per_variant': True,  # Генерировать отдельные данные для каждого варианта (prefix)
+        'max_workers': 8  # Максимальное количество потоков для параллельной обработки файлов
     }
     
     # Здесь в будущем можно добавить конфигурации для других листов:
@@ -568,9 +569,12 @@ LOADER_CONFIG = {
 # ============================================================================
 
 import logging
+import warnings
 from datetime import datetime
 from pathlib import Path
 from typing import Optional, Dict, List
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from functools import partial
 
 
 class ProjectLogger:
@@ -617,6 +621,9 @@ class ProjectLogger:
         
         # Создание консольного обработчика для INFO
         self._setup_console_handler(info_formatter)
+        
+        # Настройка логирования warnings в DEBUG лог
+        self._setup_warnings_logging(debug_formatter)
     
     def _setup_file_handlers(self, debug_formatter: logging.Formatter, info_formatter: logging.Formatter) -> None:
         """
@@ -654,6 +661,21 @@ class ProjectLogger:
         console_handler.setLevel(logging.INFO)
         console_handler.setFormatter(info_formatter)
         self.logger.addHandler(console_handler)
+    
+    def _setup_warnings_logging(self, debug_formatter: logging.Formatter) -> None:
+        """
+        Настройка логирования warnings в DEBUG лог.
+        
+        Args:
+            debug_formatter: Форматтер для DEBUG логов
+        """
+        # Перенаправляем warnings в логгер
+        def warning_to_logger(message, category, filename, lineno, file=None, line=None):
+            warning_msg = f"{category.__name__}: {message}"
+            self.logger.debug(warning_msg)
+        
+        # Устанавливаем обработчик warnings
+        warnings.showwarning = warning_to_logger
     
     def get_logger(self) -> logging.Logger:
         """
@@ -3471,6 +3493,9 @@ class FactSheetGenerator:
         self.total_rows_range = config.get('total_rows_range', {'min': 150_000, 'max': 600_000})
         self.generate_separate_data = config.get('generate_separate_data_per_variant', True)
         
+        # Параметры параллельной обработки
+        self.max_workers = config.get('max_workers', 8)  # Максимальное количество потоков
+        
         # Инициализация генератора случайных чисел
         self.random = random.Random()
         self.random.seed()
@@ -3775,11 +3800,16 @@ class FactSheetGenerator:
             tab_idx += 1
         
         # Перераспределяем ИНН
+        # Убеждаемся, что колонка ИНН имеет строковый тип для избежания FutureWarning
+        if inn_col in result_df.columns:
+            result_df[inn_col] = result_df[inn_col].astype(str)
+        
         inn_idx = 0
         for idx in range(len(result_df)):
             if inn_idx >= len(selected_inns):
                 inn_idx = 0
-            result_df.at[result_df.index[idx], inn_col] = selected_inns[inn_idx]
+            # Явно преобразуем в строку для избежания FutureWarning
+            result_df.at[result_df.index[idx], inn_col] = str(selected_inns[inn_idx])
             inn_idx += 1
         
         # Обновляем данные менеджеров на основе новых табельных номеров
@@ -4549,6 +4579,70 @@ class FactSheetGenerator:
         
         return str(filepath.absolute())
     
+    def _process_single_file(self, month: int, fact_type: str, prefix: str, generated_data: Dict) -> Optional[str]:
+        """
+        Обрабатывает один файл для указанного месяца, типа факта и префикса.
+        Используется для параллельной обработки.
+        
+        Args:
+            month: Номер месяца (1-12)
+            fact_type: Тип факта ('UP' или 'DIF')
+            prefix: Префикс для имени файла
+            generated_data: Словарь с уже сгенерированными данными для основного файла
+            
+        Returns:
+            Путь к созданному файлу или None в случае ошибки
+        """
+        try:
+            # Определяем целевое количество строк для этого файла
+            target_total_rows = self.random.randint(
+                self.total_rows_range.get('min', 150_000),
+                self.total_rows_range.get('max', 600_000)
+            )
+            
+            self.logger.info(f"Создание отдельного файла для месяца {month} типа {fact_type} с префиксом {prefix} (целевое количество строк: {target_total_rows:,})")
+            
+            # Если включена генерация отдельных данных для каждого варианта
+            if self.generate_separate_data:
+                # Фильтруем клиентов для этого месяца
+                clients_df = self._filter_clients_for_month(month)
+                
+                if clients_df.empty:
+                    self.logger.warning(f"Не найдено клиентов для месяца {month} варианта {prefix}")
+                    return None
+                
+                # Дублируем строки
+                if self.duplication_enabled:
+                    clients_df = self._duplicate_rows(clients_df, month, target_total_rows)
+                
+                # Перераспределяем табельные номера и ИНН
+                clients_df = self._redistribute_managers_and_inns(clients_df, month)
+                
+                # Генерируем факты заново для этого варианта
+                if fact_type == 'UP':
+                    clients_df = self._generate_up_facts(clients_df, month, prefix)
+                else:
+                    clients_df = self._generate_dif_facts(clients_df, month, prefix)
+                
+                # Добавляем данные менеджеров (если нужно)
+                clients_df = self._add_managers_data(clients_df, month)
+            else:
+                # Используем уже сгенерированные данные из основного файла
+                key = (month, fact_type)
+                if key in generated_data:
+                    clients_df = generated_data[key].copy()
+                else:
+                    self.logger.warning(f"Не найдены данные для месяца {month} типа {fact_type}")
+                    return None
+            
+            # Сохраняем в отдельный файл с указанным префиксом
+            filepath = self._save_month_sheet(clients_df, month, fact_type, prefix)
+            self.logger.info(f"Создан отдельный файл для месяца {month} типа {fact_type} с префиксом {prefix}: {len(clients_df):,} строк")
+            return filepath
+        except Exception as e:
+            self.logger.error(f"Ошибка при создании файла для месяца {month} типа {fact_type} с префиксом {prefix}: {str(e)}", exc_info=True)
+            return None
+    
     def process(self) -> List[str]:
         """
         Полный цикл генерации листов с фактами.
@@ -4643,52 +4737,33 @@ class FactSheetGenerator:
         if selected_pairs:
             self.logger.info(f"Создание отдельных файлов для {len(selected_pairs)} уникальных комбинаций месяц/тип/префикс")
             
-            for month, fact_type, prefix in sorted(selected_pairs, key=lambda x: (x[0], x[1], x[2])):
-                # Определяем целевое количество строк для каждого файла отдельно
-                target_total_rows = self.random.randint(
-                    self.total_rows_range.get('min', 150_000),
-                    self.total_rows_range.get('max', 600_000)
-                )
+            # Используем параллельную обработку для ускорения создания файлов
+            if self.max_workers > 1 and len(selected_pairs) > 1:
+                self.logger.info(f"Использование параллельной обработки с {min(self.max_workers, len(selected_pairs))} потоками")
                 
-                self.logger.info(f"Создание отдельного файла для месяца {month} типа {fact_type} с префиксом {prefix} (целевое количество строк: {target_total_rows:,})")
-                
-                # Если включена генерация отдельных данных для каждого варианта
-                if self.generate_separate_data:
-                    # Фильтруем клиентов для этого месяца
-                    clients_df = self._filter_clients_for_month(month)
+                # Создаем задачи для параллельной обработки
+                with ThreadPoolExecutor(max_workers=min(self.max_workers, len(selected_pairs))) as executor:
+                    # Отправляем задачи на выполнение
+                    future_to_pair = {
+                        executor.submit(self._process_single_file, month, fact_type, prefix, generated_data): (month, fact_type, prefix)
+                        for month, fact_type, prefix in sorted(selected_pairs, key=lambda x: (x[0], x[1], x[2]))
+                    }
                     
-                    if clients_df.empty:
-                        self.logger.warning(f"Не найдено клиентов для месяца {month} варианта {prefix}")
-                        continue
-                    
-                    # Дублируем строки
-                    if self.duplication_enabled:
-                        clients_df = self._duplicate_rows(clients_df, month, target_total_rows)
-                    
-                    # Перераспределяем табельные номера и ИНН
-                    clients_df = self._redistribute_managers_and_inns(clients_df, month)
-                    
-                    # Генерируем факты заново для этого варианта
-                    if fact_type == 'UP':
-                        clients_df = self._generate_up_facts(clients_df, month, prefix)
-                    else:
-                        clients_df = self._generate_dif_facts(clients_df, month, prefix)
-                    
-                    # Добавляем данные менеджеров (если нужно)
-                    clients_df = self._add_managers_data(clients_df, month)
-                else:
-                    # Используем уже сгенерированные данные из основного файла
-                    key = (month, fact_type)
-                    if key in generated_data:
-                        clients_df = generated_data[key].copy()
-                    else:
-                        self.logger.warning(f"Не найдены данные для месяца {month} типа {fact_type}")
-                        continue
-                
-                # Сохраняем в отдельный файл с указанным префиксом
-                filepath = self._save_month_sheet(clients_df, month, fact_type, prefix)
-                created_files.append(filepath)
-                self.logger.info(f"Создан отдельный файл для месяца {month} типа {fact_type} с префиксом {prefix}: {len(clients_df):,} строк")
+                    # Собираем результаты по мере выполнения
+                    for future in as_completed(future_to_pair):
+                        month, fact_type, prefix = future_to_pair[future]
+                        try:
+                            filepath = future.result()
+                            if filepath:
+                                created_files.append(filepath)
+                        except Exception as e:
+                            self.logger.error(f"Ошибка при обработке файла для месяца {month} типа {fact_type} с префиксом {prefix}: {str(e)}", exc_info=True)
+            else:
+                # Последовательная обработка (если max_workers = 1 или только один файл)
+                for month, fact_type, prefix in sorted(selected_pairs, key=lambda x: (x[0], x[1], x[2])):
+                    filepath = self._process_single_file(month, fact_type, prefix, generated_data)
+                    if filepath:
+                        created_files.append(filepath)
         else:
             self.logger.info("Отдельные файлы не создаются (selected_months пуст)")
         
