@@ -4225,31 +4225,70 @@ class FactSheetGenerator:
                 sample_tab_zfilled = sample_tab.zfill(8)
                 self.logger.warning(f"Табельные номера не найдены в кэше. Пример: '{sample_tab}' (zfill: '{sample_tab_zfilled}'). Ключи в кэше (первые 5): {list(month_managers.keys())[:5]} [class: FactSheetGenerator | def: _add_managers_data]")
             
-            # Создаем колонки для менеджеров с правильным форматированием табельных номеров
-            def get_manager_info(tab_num, field):
-                if pd.isna(tab_num) or str(tab_num).strip() == '-' or str(tab_num).strip() == '' or str(tab_num).strip() == 'nan':
-                    return '-'
-                tab_str = str(tab_num).strip()
-                # Пробуем найти с лидирующими нулями и без
-                manager = month_managers.get(tab_str, None)
-                if manager is None:
-                    # Пробуем с лидирующими нулями
-                    tab_zfilled = tab_str.zfill(8)
-                    manager = month_managers.get(tab_zfilled, None)
-                if manager is None:
-                    # Пробуем без лидирующих нулей
-                    tab_no_zeros = tab_str.lstrip('0')
-                    if tab_no_zeros:
-                        manager = month_managers.get(tab_no_zeros, None)
-                
-                if manager:
-                    return manager.get(field, '-')
-                return '-'
+            # Оптимизация: используем векторизацию pandas вместо apply для ускорения
+            # Создаем lookup DataFrame для быстрого поиска
+            manager_data_list = []
+            for tab_key, manager_info in month_managers.items():
+                tab_str = str(tab_key).strip()
+                # Добавляем все варианты табельного номера
+                manager_data_list.append({
+                    'tab_key': tab_str,
+                    'ФИО': manager_info.get('ФИО', '-'),
+                    'Код подразделения': manager_info.get('Код подразделения', '-'),
+                    'Короткое ТБ': manager_info.get('Короткое ТБ', '-'),
+                    'Полное ГОСБ': manager_info.get('Полное ГОСБ', '-')
+                })
+                # Добавляем вариант с лидирующими нулями
+                tab_zfilled = tab_str.zfill(8)
+                if tab_zfilled != tab_str:
+                    manager_data_list.append({
+                        'tab_key': tab_zfilled,
+                        'ФИО': manager_info.get('ФИО', '-'),
+                        'Код подразделения': manager_info.get('Код подразделения', '-'),
+                        'Короткое ТБ': manager_info.get('Короткое ТБ', '-'),
+                        'Полное ГОСБ': manager_info.get('Полное ГОСБ', '-')
+                    })
+                # Добавляем вариант без лидирующих нулей
+                tab_no_zeros = tab_str.lstrip('0')
+                if tab_no_zeros and tab_no_zeros != tab_str:
+                    manager_data_list.append({
+                        'tab_key': tab_no_zeros,
+                        'ФИО': manager_info.get('ФИО', '-'),
+                        'Код подразделения': manager_info.get('Код подразделения', '-'),
+                        'Короткое ТБ': manager_info.get('Короткое ТБ', '-'),
+                        'Полное ГОСБ': manager_info.get('Полное ГОСБ', '-')
+                    })
             
-            result_df[fio_col] = result_df[client_tab_col].apply(lambda x: get_manager_info(x, 'ФИО'))
-            result_df[org_code_col] = result_df[client_tab_col].apply(lambda x: get_manager_info(x, 'Код подразделения'))
-            result_df[tb_col] = result_df[client_tab_col].apply(lambda x: get_manager_info(x, 'Короткое ТБ'))
-            result_df[gosb_col] = result_df[client_tab_col].apply(lambda x: get_manager_info(x, 'Полное ГОСБ'))
+            if manager_data_list:
+                manager_lookup_df = pd.DataFrame(manager_data_list).drop_duplicates(subset=['tab_key'], keep='first')
+                manager_lookup_df.set_index('tab_key', inplace=True)
+                
+                # Нормализуем табельные номера в result_df
+                result_df['_tab_key'] = result_df[client_tab_col].astype(str).str.strip()
+                
+                # Используем merge для быстрого поиска
+                result_df = result_df.merge(
+                    manager_lookup_df,
+                    left_on='_tab_key',
+                    right_index=True,
+                    how='left',
+                    suffixes=('', '_manager')
+                )
+                
+                # Заполняем колонки менеджеров
+                result_df[fio_col] = result_df['ФИО_manager'].fillna('-')
+                result_df[org_code_col] = result_df['Код подразделения_manager'].fillna('-')
+                result_df[tb_col] = result_df['Короткое ТБ_manager'].fillna('-')
+                result_df[gosb_col] = result_df['Полное ГОСБ_manager'].fillna('-')
+                
+                # Удаляем временные колонки
+                result_df.drop(['_tab_key', 'ФИО_manager', 'Код подразделения_manager', 'Короткое ТБ_manager', 'Полное ГОСБ_manager'], axis=1, errors='ignore', inplace=True)
+            else:
+                # Если нет данных менеджеров, заполняем '-'
+                result_df[fio_col] = '-'
+                result_df[org_code_col] = '-'
+                result_df[tb_col] = '-'
+                result_df[gosb_col] = '-'
             
             # Проверяем, сколько данных заполнено
             filled_count = (result_df[fio_col] != '-').sum()
@@ -4846,8 +4885,25 @@ class FactSheetGenerator:
                         unique_prefixes.add((prefix, fact_type))
                 
                 self.logger.info(f"Предварительная генерация базовых данных для {len(unique_prefixes)} уникальных префиксов")
-                for prefix, fact_type in unique_prefixes:
-                    self._generate_base_data_for_prefix(prefix, fact_type)
+                
+                # Распараллеливаем генерацию базовых данных для префиксов
+                if self.max_workers > 1 and len(unique_prefixes) > 1:
+                    self.logger.info(f"Параллельная генерация базовых данных с {min(self.max_workers, len(unique_prefixes))} потоками")
+                    with ThreadPoolExecutor(max_workers=min(self.max_workers, len(unique_prefixes))) as executor:
+                        futures = {
+                            executor.submit(self._generate_base_data_for_prefix, prefix, fact_type): (prefix, fact_type)
+                            for prefix, fact_type in unique_prefixes
+                        }
+                        for future in as_completed(futures):
+                            prefix, fact_type = futures[future]
+                            try:
+                                future.result()
+                            except Exception as e:
+                                self.logger.error(f"Ошибка при генерации базовых данных для префикса {prefix} типа {fact_type}: {str(e)}", exc_info=True)
+                else:
+                    # Последовательная генерация
+                    for prefix, fact_type in unique_prefixes:
+                        self._generate_base_data_for_prefix(prefix, fact_type)
             
             # Используем параллельную обработку для ускорения создания файлов
             if self.max_workers > 1 and len(selected_pairs) > 1:
