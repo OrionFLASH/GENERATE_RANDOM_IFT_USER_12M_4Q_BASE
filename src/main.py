@@ -3523,6 +3523,12 @@ class FactSheetGenerator:
         # Ключ: (prefix, ИНН, индекс строки), значение: словарь {месяц: факт}
         # Если generate_separate_data = False, prefix = ''
         self.facts_storage = {}
+        
+        # Кэш для базовых данных по префиксам (закрепление КМ и клиентов)
+        # Ключ: (prefix, fact_type), значение: словарь {month: DataFrame}
+        # Используется для обеспечения одинакового закрепления внутри группы префикса
+        # Базовые данные генерируются один раз для каждого префикса и используются для всех месяцев
+        self.prefix_base_data_cache = {}
     
     def _preload_managers_data(self) -> None:
         """
@@ -4633,6 +4639,62 @@ class FactSheetGenerator:
         
         return str(filepath.absolute())
     
+    def _generate_base_data_for_prefix(self, prefix: str, fact_type: str) -> Dict[int, pd.DataFrame]:
+        """
+        Генерирует базовые данные (закрепление КМ и клиентов) для префикса один раз.
+        Эти данные будут использоваться для всех месяцев этого префикса.
+        
+        Args:
+            prefix: Префикс для имени файла (OD, RA, PS)
+            fact_type: Тип факта ('UP' или 'DIF')
+            
+        Returns:
+            Словарь {month: DataFrame} с базовыми данными для каждого месяца
+        """
+        cache_key = (prefix, fact_type)
+        if cache_key in self.prefix_base_data_cache:
+            self.logger.debug(f"Использование кэшированных базовых данных для префикса {prefix} типа {fact_type} [class: FactSheetGenerator | def: _generate_base_data_for_prefix]")
+            return self.prefix_base_data_cache[cache_key]
+        
+        self.logger.info(f"Генерация базовых данных для префикса {prefix} типа {fact_type} (один раз для всех месяцев)")
+        
+        # Создаем генератор случайных чисел для этого префикса
+        # Используем seed на основе префикса для воспроизводимости
+        prefix_random = random.Random()
+        prefix_random.seed(hash(f"{prefix}_{fact_type}"))
+        
+        base_data = {}
+        
+        # Генерируем базовые данные для всех месяцев
+        for month in range(1, 13):
+            # Фильтруем клиентов для этого месяца
+            clients_df = self._filter_clients_for_month(month)
+            
+            if clients_df.empty:
+                base_data[month] = pd.DataFrame()
+                continue
+            
+            # Перераспределяем табельные номера и ИНН (один раз для префикса)
+            clients_df = self._redistribute_managers_and_inns(clients_df, month, prefix_random)
+            
+            # Генерируем факты для этого варианта
+            if fact_type == 'UP':
+                clients_df = self._generate_up_facts(clients_df, month, prefix, prefix_random)
+            else:
+                clients_df = self._generate_dif_facts(clients_df, month, prefix, prefix_random)
+            
+            # Добавляем данные менеджеров
+            clients_df = self._add_managers_data(clients_df, month)
+            
+            # Сохраняем базовые данные (без дублей)
+            base_data[month] = clients_df.copy()
+        
+        # Сохраняем в кэш
+        self.prefix_base_data_cache[cache_key] = base_data
+        self.logger.info(f"Базовые данные для префикса {prefix} типа {fact_type} сгенерированы и сохранены в кэш")
+        
+        return base_data
+    
     def _process_single_file(self, month: int, fact_type: str, prefix: str, generated_data: Dict) -> Optional[str]:
         """
         Обрабатывает один файл для указанного месяца, типа факта и префикса.
@@ -4664,28 +4726,20 @@ class FactSheetGenerator:
             
             # Если включена генерация отдельных данных для каждого варианта
             if self.generate_separate_data:
-                # Фильтруем клиентов для этого месяца
-                clients_df = self._filter_clients_for_month(month)
+                # Получаем базовые данные для префикса (генерируются один раз для всех месяцев)
+                base_data = self._generate_base_data_for_prefix(prefix, fact_type)
                 
-                if clients_df.empty:
-                    self.logger.warning(f"Не найдено клиентов для месяца {month} варианта {prefix}")
+                if month not in base_data or base_data[month].empty:
+                    self.logger.warning(f"Не найдено базовых данных для месяца {month} варианта {prefix}")
                     return None
                 
-                    # Дублируем строки
-                    if self.duplication_enabled:
-                        clients_df = self._duplicate_rows(clients_df, month, target_total_rows, thread_local_random)
-                    
-                    # Перераспределяем табельные номера и ИНН
-                    clients_df = self._redistribute_managers_and_inns(clients_df, month, thread_local_random)
+                # Берем базовые данные для этого месяца
+                clients_df = base_data[month].copy()
                 
-                    # Генерируем факты заново для этого варианта
-                    if fact_type == 'UP':
-                        clients_df = self._generate_up_facts(clients_df, month, prefix, thread_local_random)
-                    else:
-                        clients_df = self._generate_dif_facts(clients_df, month, prefix, thread_local_random)
-                
-                # Добавляем данные менеджеров (если нужно)
-                clients_df = self._add_managers_data(clients_df, month)
+                # Применяем дублирование строк с целевым количеством строк
+                # Это единственное, что меняется от файла к файлу
+                if self.duplication_enabled:
+                    clients_df = self._duplicate_rows(clients_df, month, target_total_rows, thread_local_random)
             else:
                 # Используем уже сгенерированные данные из основного файла
                 key = (month, fact_type)
