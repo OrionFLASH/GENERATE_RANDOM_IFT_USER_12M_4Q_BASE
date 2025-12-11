@@ -66,12 +66,12 @@ LOADER_CONFIG = {
         'business_blocks': {
             'KMKKSB': {
                 'name': 'Клиентские менеджеры',
-                'count': 1650,
+                'count': 3000,
                 'gender_distribution': 0.7  # 50% мужчин, 50% женщин
             },
             'MNS': {
                 'name': 'Менеджер нефинансовых сервисов',
-                'count': 160,
+                'count': 300,
                 'gender_distribution': 0.2  # 50% мужчин, 50% женщин
             }
         },
@@ -239,7 +239,7 @@ LOADER_CONFIG = {
         'freeze_panes': 'A2',  # Закрепление панелей: строка и колонка
         
         # Параметры генерации клиентов
-        'count': 25000,  # Количество организаций
+        'count': 30000,  # Количество организаций
         
         # Названия колонок
         'columns': {
@@ -274,13 +274,60 @@ LOADER_CONFIG = {
             'Нефтегазовая компания', 'Металлургический комбинат', 'Химический завод', 'Машиностроительный завод',
             'Пищевой комбинат', 'Текстильная фабрика', 'Мебельная фабрика', 'Строительная компания',
             'Дорожная компания', 'Жилищно-коммунальная компания', 'Медицинский центр', 'Образовательный центр',
-            'Научно-исследовательский институт', 'Проектный институт', 'Архитектурное бюро', 'Дизайн-студия'
+            'Научно-исследовательский институт', 'Проектный институт', 'Архитектурное бюро', 'Дизайн-студия',
+            'Торговая сеть', 'Производственное объединение', 'Холдинговая компания', 'Группа компаний',
+            'Корпорация', 'Концерн', 'Трест', 'Синдикат', 'Альянс', 'Консорциум', 'Ассоциация',
+            'Промышленная группа', 'Торговая группа', 'Финансовая группа', 'Инвестиционная группа',
+            'Строительная группа', 'Транспортная группа', 'Энергетическая группа', 'Телекоммуникационная группа',
+            'Медиа-группа', 'Рекламная группа', 'Маркетинговая группа', 'Консалтинговая группа',
+            'Юридическая группа', 'Аудиторская группа', 'Бухгалтерская группа', 'Налоговая группа',
+            'Кадровая группа', 'HR-группа', 'IT-группа', 'Технологическая группа', 'Инновационная группа',
+            'Исследовательская группа', 'Разработческая группа', 'Проектная группа', 'Инжиниринговая группа',
+            'Сервисная группа', 'Логистическая группа', 'Складская группа', 'Транспортно-логистическая группа',
+            'Торгово-логистическая группа', 'Производственно-торговая группа', 'Строительно-торговая группа',
+            'Промышленно-торговая группа', 'Финансово-торговая группа', 'Инвестиционно-торговая группа',
+            'Торгово-сервисная группа', 'Производственно-сервисная группа', 'Строительно-сервисная группа',
+            'Промышленно-сервисная группа', 'Финансово-сервисная группа', 'Инвестиционно-сервисная группа',
+            'Торгово-производственная группа', 'Строительно-производственная группа', 'Промышленно-производственная группа',
+            'Финансово-производственная группа', 'Инвестиционно-производственная группа', 'Сервисно-производственная группа',
+            'Торгово-строительная группа', 'Промышленно-строительная группа', 'Финансово-строительная группа',
+            'Инвестиционно-строительная группа', 'Сервисно-строительная группа', 'Производственно-строительная группа',
+            'Торгово-промышленная группа', 'Финансово-промышленная группа', 'Инвестиционно-промышленная группа',
+            'Сервисно-промышленная группа', 'Производственно-промышленная группа', 'Строительно-промышленная группа',
+            'Торгово-финансовая группа', 'Инвестиционно-финансовая группа', 'Сервисно-финансовая группа',
+            'Производственно-финансовая группа', 'Строительно-финансовая группа', 'Промышленно-финансовая группа',
+            'Торгово-инвестиционная группа', 'Сервисно-инвестиционная группа', 'Производственно-инвестиционная группа',
+            'Строительно-инвестиционная группа', 'Промышленно-инвестиционная группа', 'Финансово-инвестиционная группа',
+            'Торгово-сервисная компания', 'Производственно-сервисная компания', 'Строительно-сервисная компания',
+            'Промышленно-сервисная компания', 'Финансово-сервисная компания', 'Инвестиционно-сервисная компания',
+            'Торгово-производственная компания', 'Строительно-производственная компания', 'Промышленно-производственная компания',
+            'Финансово-производственная компания', 'Инвестиционно-производственная компания', 'Сервисно-производственная компания',
+            'Торгово-строительная компания', 'Промышленно-строительная компания', 'Финансово-строительная компания',
+            'Инвестиционно-строительная компания', 'Сервисно-строительная компания', 'Производственно-строительная компания',
+            'Торгово-промышленная компания', 'Финансово-промышленная компания', 'Инвестиционно-промышленная компания',
+            'Сервисно-промышленная компания', 'Производственно-промышленная компания', 'Строительно-промышленная компания',
+            'Торгово-финансовая компания', 'Инвестиционно-финансовая компания', 'Сервисно-финансовая компания',
+            'Производственно-финансовая компания', 'Строительно-финансовая компания', 'Промышленно-финансовая компания',
+            'Торгово-инвестиционная компания', 'Сервисно-инвестиционная компания', 'Производственно-инвестиционная компания',
+            'Строительно-инвестиционная компания', 'Промышленно-инвестиционная компания', 'Финансово-инвестиционная компания'
         ],
         
         # Приставки и суффиксы к названиям
         'name_prefixes': [
             'Центральный', 'Пригородный', 'Городской', 'Региональный', 'Федеральный',
-            'Международный', 'Национальный', 'Столичный', 'Крупнейший', 'Ведущий'
+            'Международный', 'Национальный', 'Столичный', 'Крупнейший', 'Ведущий',
+            'Северный', 'Южный', 'Восточный', 'Западный', 'Северо-Западный', 'Северо-Восточный',
+            'Юго-Западный', 'Юго-Восточный', 'Центрально-Европейский', 'Европейский', 'Азиатский',
+            'Сибирский', 'Уральский', 'Дальневосточный', 'Кавказский', 'Приволжский', 'Причерноморский',
+            'Прибалтийский', 'Арктический', 'Тихоокеанский', 'Атлантический', 'Средиземноморский',
+            'Крупный', 'Средний', 'Малый', 'Микро', 'Макро', 'Мега', 'Супер', 'Ультра',
+            'Глобальный', 'Локальный', 'Территориальный', 'Транснациональный', 'Мультинациональный',
+            'Интегрированный', 'Диверсифицированный', 'Специализированный', 'Универсальный', 'Многоотраслевой',
+            'Однопрофильный', 'Многопрофильный', 'Корпоративный', 'Индивидуальный', 'Частный', 'Публичный',
+            'Государственный', 'Муниципальный', 'Общественный', 'Некоммерческий', 'Коммерческий',
+            'Производственный', 'Торговый', 'Сервисный', 'Финансовый', 'Инвестиционный', 'Строительный',
+            'Промышленный', 'Аграрный', 'Энергетический', 'Транспортный', 'Логистический', 'Информационный',
+            'Технологический', 'Инновационный', 'Исследовательский', 'Научный', 'Образовательный', 'Медицинский'
         ],
         
         'name_suffixes': [
@@ -288,7 +335,55 @@ LOADER_CONFIG = {
             'филиал в г. Екатеринбург', 'филиал в г. Казань', 'филиал в г. Нижний Новгород',
             'филиал в г. Челябинск', 'филиал в г. Самара', 'филиал в г. Омск',
             'филиал в г. Ростов-на-Дону', 'филиал в г. Уфа', 'филиал в г. Красноярск',
-            'филиал в г. Воронеж', 'филиал в г. Пермь', 'филиал в г. Волгоград'
+            'филиал в г. Воронеж', 'филиал в г. Пермь', 'филиал в г. Волгоград',
+            'филиал в г. Краснодар', 'филиал в г. Саратов', 'филиал в г. Тюмень',
+            'филиал в г. Тольятти', 'филиал в г. Ижевск', 'филиал в г. Барнаул',
+            'филиал в г. Ульяновск', 'филиал в г. Иркутск', 'филиал в г. Хабаровск',
+            'филиал в г. Ярославль', 'филиал в г. Владивосток', 'филиал в г. Махачкала',
+            'филиал в г. Томск', 'филиал в г. Оренбург', 'филиал в г. Кемерово',
+            'филиал в г. Новокузнецк', 'филиал в г. Рязань', 'филиал в г. Астрахань',
+            'филиал в г. Набережные Челны', 'филиал в г. Пенза', 'филиал в г. Липецк',
+            'филиал в г. Тула', 'филиал в г. Киров', 'филиал в г. Чебоксары',
+            'филиал в г. Калининград', 'филиал в г. Курск', 'филиал в г. Улан-Удэ',
+            'филиал в г. Ставрополь', 'филиал в г. Сочи', 'филиал в г. Тверь',
+            'филиал в г. Магнитогорск', 'филиал в г. Иваново', 'филиал в г. Брянск',
+            'филиал в г. Белгород', 'филиал в г. Сургут', 'филиал в г. Владимир',
+            'филиал в г. Нижний Тагил', 'филиал в г. Архангельск', 'филиал в г. Чита',
+            'филиал в г. Смоленск', 'филиал в г. Калуга', 'филиал в г. Череповец',
+            'филиал в г. Волжский', 'филиал в г. Стерлитамак', 'филиал в г. Грозный',
+            'филиал в г. Якутск', 'филиал в г. Комсомольск-на-Амуре', 'филиал в г. Находка',
+            'филиал в г. Петропавловск-Камчатский', 'филиал в г. Благовещенск', 'филиал в г. Южно-Сахалинск',
+            'филиал в г. Нальчик', 'филиал в г. Элиста', 'филиал в г. Сыктывкар',
+            'филиал в г. Йошкар-Ола', 'филиал в г. Саранск', 'филиал в г. Абакан',
+            'филиал в г. Горно-Алтайск', 'филиал в г. Кызыл', 'филиал в г. Биробиджан',
+            'филиал в г. Магадан', 'филиал в г. Анадырь', 'филиал в г. Нарьян-Мар',
+            'филиал в г. Салехард', 'филиал в г. Ханты-Мансийск', 'филиал в г. Гатчина',
+            'филиал в г. Выборг', 'филиал в г. Великий Новгород', 'филиал в г. Псков',
+            'филиал в г. Великие Луки', 'филиал в г. Мурманск', 'филиал в г. Северодвинск',
+            'филиал в г. Воркута', 'филиал в г. Ухта', 'филиал в г. Печора',
+            'филиал в г. Инта', 'филиал в г. Сосногорск', 'филиал в г. Усинск',
+            'филиал в г. Емва', 'филиал в г. Микунь', 'филиал в г. Княжпогост',
+            'филиал в г. Жешарт', 'филиал в г. Троицко-Печорск', 'филиал в г. Объячево',
+            'филиал в г. Айкино', 'филиал в г. Визинга', 'филиал в г. Койгородок',
+            'филиал в г. Усть-Кулом', 'филиал в г. Усть-Цильма', 'филиал в г. Ижма',
+            'филиал в г. Сыня', 'филиал в г. Щельяюр', 'филиал в г. Краснобор',
+            'филиал в г. Усть-Вымь', 'филиал в г. Балашиха', 'филиал в г. Подольск',
+            'филиал в г. Химки', 'филиал в г. Королев', 'филиал в г. Мытищи',
+            'филиал в г. Люберцы', 'филиал в г. Красногорск', 'филиал в г. Электросталь',
+            'филиал в г. Коломна', 'филиал в г. Одинцово', 'филиал в г. Серпухов',
+            'филиал в г. Орехово-Зуево', 'филиал в г. Ногинск', 'филиал в г. Щелково',
+            'филиал в г. Домодедово', 'филиал в г. Раменское', 'филиал в г. Жуковский',
+            'филиал в г. Сергиев Посад', 'филиал в г. Пушкино', 'филиал в г. Воскресенск',
+            'филиал в г. Клин', 'филиал в г. Истра', 'филиал в г. Егорьевск',
+            'филиал в г. Дмитров', 'филиал в г. Солнечногорск', 'филиал в г. Павловский Посад',
+            'филиал в г. Лобня', 'филиал в г. Дубна', 'филиал в г. Железнодорожный',
+            'филиал в г. Реутов', 'филиал в г. Долгопрудный', 'филиал в г. Лыткарино',
+            'филиал в г. Троицк', 'филиал в г. Фрязино', 'филиал в г. Ивантеевка',
+            'филиал в г. Видное', 'филиал в г. Наро-Фоминск', 'филиал в г. Шатура',
+            'филиал в г. Можайск', 'филиал в г. Звенигород', 'филиал в г. Волоколамск',
+            'филиал в г. Руза', 'филиал в г. Зарайск', 'филиал в г. Ступино',
+            'филиал в г. Чехов', 'филиал в г. Озеры', 'филиал в г. Кашира',
+            'филиал в г. Луховицы', 'филиал в г. Серебряные Пруды', 'филиал в г. Шаховская'
         ],
         
         # Варианты фамилий для ИП
@@ -436,7 +531,25 @@ LOADER_CONFIG = {
         
         # Параметры для добавления данных клиентских менеджеров
         'include_managers': True,  # Добавлять ли данные менеджеров из USER_CNG
-        'manager_business_block': 'Клиентские менеджеры'  # Бизнес-блок менеджеров для фильтрации
+        'manager_business_block': 'Клиентские менеджеры',  # Бизнес-блок менеджеров для фильтрации
+        
+        # Параметры для дублирования строк и генерации вариантов
+        'row_duplication': {
+            'enabled': True,  # Включить дублирование строк
+            'distribution': {
+                'no_duplicates': 0.65,  # 65% без дублирования
+                'duplicates_2_5': 0.20,  # 20% 2-5 дублей
+                'duplicates_6_9': 0.10,  # 10% 6-9 дублей
+                'duplicates_10_50': 0.05  # 5% от 10 до 50 дублей
+            },
+            'same_org_unit_pct': 0.60,  # 60% дублируемых строк имеют тот же ТБ/ГОСБ
+            'different_org_unit_pct': 0.40  # 40% дублируемых строк имеют другие ТБ/ГОСБ
+        },
+        'total_rows_range': {
+            'min': 150_000,  # Минимальное количество строк
+            'max': 600_000  # Максимальное количество строк
+        },
+        'generate_separate_data_per_variant': True  # Генерировать отдельные данные для каждого варианта (prefix)
     }
     
     # Здесь в будущем можно добавить конфигурации для других листов:
@@ -3352,6 +3465,12 @@ class FactSheetGenerator:
         self.include_managers = config.get('include_managers', True)
         self.manager_business_block = config.get('manager_business_block', 'Клиентские менеджеры')
         
+        # Параметры дублирования строк
+        self.duplication_config = config.get('row_duplication', {})
+        self.duplication_enabled = self.duplication_config.get('enabled', True)
+        self.total_rows_range = config.get('total_rows_range', {'min': 150_000, 'max': 600_000})
+        self.generate_separate_data = config.get('generate_separate_data_per_variant', True)
+        
         # Инициализация генератора случайных чисел
         self.random = random.Random()
         self.random.seed()
@@ -3362,7 +3481,8 @@ class FactSheetGenerator:
             self._preload_managers_data()
         
         # Хранилище фактов по клиентам и месяцам (для нарастающих фактов)
-        # Ключ: (ИНН, индекс строки), значение: словарь {месяц: факт}
+        # Ключ: (prefix, ИНН, индекс строки), значение: словарь {месяц: факт}
+        # Если generate_separate_data = False, prefix = ''
         self.facts_storage = {}
     
     def _preload_managers_data(self) -> None:
@@ -3415,32 +3535,288 @@ class FactSheetGenerator:
         
         self.logger.debug(f"Предзагружены данные менеджеров для {len(self.managers_cache)} месяцев [class: FactSheetGenerator | def: _preload_managers_data]")
     
-    def _filter_clients_for_month(self, month: int) -> pd.DataFrame:
+    def _filter_clients_for_month(self, month: int, client_data: Optional[pd.DataFrame] = None) -> pd.DataFrame:
         """
         Фильтрует клиентов, у которых в указанном месяце есть данные по ТБ и ГОСБ (не "-").
         
         Args:
             month: Номер месяца (1-12)
+            client_data: DataFrame с данными клиентов (если None, используется self.client_cng_data)
             
         Returns:
             DataFrame с отфильтрованными клиентами
         """
+        if client_data is None:
+            client_data = self.client_cng_data
+        
         tb_col = f'Месяц_{month}_Короткое ТБ'
         gosb_col = f'Месяц_{month}_Полное ГОСБ'
         
         # Фильтруем клиентов, у которых есть данные по ТБ и ГОСБ
-        filtered = self.client_cng_data[
-            (self.client_cng_data[tb_col].astype(str).str.strip() != '-') &
-            (self.client_cng_data[tb_col].astype(str).str.strip() != '') &
-            (~self.client_cng_data[tb_col].isna()) &
-            (self.client_cng_data[gosb_col].astype(str).str.strip() != '-') &
-            (self.client_cng_data[gosb_col].astype(str).str.strip() != '') &
-            (~self.client_cng_data[gosb_col].isna())
+        filtered = client_data[
+            (client_data[tb_col].astype(str).str.strip() != '-') &
+            (client_data[tb_col].astype(str).str.strip() != '') &
+            (~client_data[tb_col].isna()) &
+            (client_data[gosb_col].astype(str).str.strip() != '-') &
+            (client_data[gosb_col].astype(str).str.strip() != '') &
+            (~client_data[gosb_col].isna())
         ].copy()
         
         return filtered
     
-    def _generate_up_facts(self, clients_df: pd.DataFrame, month: int) -> pd.DataFrame:
+    def _duplicate_rows(self, clients_df: pd.DataFrame, month: int, target_total_rows: int) -> pd.DataFrame:
+        """
+        Дублирует строки клиентов согласно конфигурации.
+        
+        Args:
+            clients_df: DataFrame с клиентами
+            month: Номер месяца (1-12)
+            target_total_rows: Целевое общее количество строк
+            
+        Returns:
+            DataFrame с дублированными строками
+        """
+        if not self.duplication_enabled or len(clients_df) == 0:
+            return clients_df
+        
+        distribution = self.duplication_config.get('distribution', {})
+        no_duplicates_pct = distribution.get('no_duplicates', 0.65)
+        duplicates_2_5_pct = distribution.get('duplicates_2_5', 0.20)
+        duplicates_6_9_pct = distribution.get('duplicates_6_9', 0.10)
+        duplicates_10_50_pct = distribution.get('duplicates_10_50', 0.05)
+        
+        same_org_pct = self.duplication_config.get('same_org_unit_pct', 0.60)
+        
+        # Вычисляем количество строк для каждой категории
+        total_base = len(clients_df)
+        no_duplicates_count = int(total_base * no_duplicates_pct)
+        duplicates_2_5_count = int(total_base * duplicates_2_5_pct)
+        duplicates_6_9_count = int(total_base * duplicates_6_9_pct)
+        duplicates_10_50_count = int(total_base * duplicates_10_50_pct)
+        
+        # Создаем список для результата
+        result_rows = []
+        
+        # Получаем все доступные ТБ/ГОСБ для перераспределения из исходных данных
+        tb_col = f'Месяц_{month}_Короткое ТБ'
+        gosb_col = f'Месяц_{month}_Полное ГОСБ'
+        org_code_col = f'Месяц_{month}_Код подразделения'
+        
+        # Используем исходные данные для получения всех доступных ТБ/ГОСБ
+        available_org_units = self.client_cng_data[[org_code_col, tb_col, gosb_col]].drop_duplicates()
+        available_org_units = available_org_units[
+            (available_org_units[org_code_col].astype(str).str.strip() != '-') &
+            (available_org_units[org_code_col].astype(str).str.strip() != '') &
+            (available_org_units[tb_col].astype(str).str.strip() != '-') &
+            (available_org_units[gosb_col].astype(str).str.strip() != '-')
+        ]
+        
+        idx = 0
+        
+        # 65% без дублирования
+        for i in range(min(no_duplicates_count, len(clients_df))):
+            if idx >= len(clients_df):
+                break
+            row = clients_df.iloc[idx].copy()
+            result_rows.append(row)
+            idx += 1
+        
+        # 20% 2-5 дублей
+        for i in range(duplicates_2_5_count):
+            if idx >= len(clients_df):
+                idx = 0  # Начинаем заново, если нужно
+            base_row = clients_df.iloc[idx % len(clients_df)].copy()
+            num_duplicates = self.random.randint(2, 6)  # 2-5 дублей
+            
+            for dup in range(num_duplicates):
+                dup_row = base_row.copy()
+                # 60% тот же ТБ/ГОСБ, 40% другие
+                if self.random.random() < same_org_pct:
+                    # Оставляем тот же ТБ/ГОСБ
+                    pass
+                else:
+                    # Выбираем другой ТБ/ГОСБ
+                    if len(available_org_units) > 0:
+                        try:
+                            new_org = available_org_units.sample(n=1, random_state=None).iloc[0]
+                            dup_row[org_code_col] = new_org[org_code_col]
+                            dup_row[tb_col] = new_org[tb_col]
+                            dup_row[gosb_col] = new_org[gosb_col]
+                        except (ValueError, IndexError):
+                            # Если не удалось выбрать, оставляем исходные значения
+                            pass
+                result_rows.append(dup_row)
+            idx += 1
+        
+        # 10% 6-9 дублей
+        for i in range(duplicates_6_9_count):
+            if idx >= len(clients_df):
+                idx = 0
+            base_row = clients_df.iloc[idx % len(clients_df)].copy()
+            num_duplicates = self.random.randint(6, 10)  # 6-9 дублей
+            
+            for dup in range(num_duplicates):
+                dup_row = base_row.copy()
+                if self.random.random() < same_org_pct:
+                    pass
+                else:
+                    if len(available_org_units) > 0:
+                        try:
+                            new_org = available_org_units.sample(n=1, random_state=None).iloc[0]
+                            dup_row[org_code_col] = new_org[org_code_col]
+                            dup_row[tb_col] = new_org[tb_col]
+                            dup_row[gosb_col] = new_org[gosb_col]
+                        except (ValueError, IndexError):
+                            pass
+                result_rows.append(dup_row)
+            idx += 1
+        
+        # 5% от 10 до 50 дублей
+        for i in range(duplicates_10_50_count):
+            if idx >= len(clients_df):
+                idx = 0
+            base_row = clients_df.iloc[idx % len(clients_df)].copy()
+            num_duplicates = self.random.randint(10, 51)  # 10-50 дублей
+            
+            for dup in range(num_duplicates):
+                dup_row = base_row.copy()
+                if self.random.random() < same_org_pct:
+                    pass
+                else:
+                    if len(available_org_units) > 0:
+                        try:
+                            new_org = available_org_units.sample(n=1, random_state=None).iloc[0]
+                            dup_row[org_code_col] = new_org[org_code_col]
+                            dup_row[tb_col] = new_org[tb_col]
+                            dup_row[gosb_col] = new_org[gosb_col]
+                        except (ValueError, IndexError):
+                            pass
+                result_rows.append(dup_row)
+            idx += 1
+        
+        # Если нужно больше строк, добавляем случайные дубликаты
+        while len(result_rows) < target_total_rows and len(clients_df) > 0:
+            # Используем randrange чтобы избежать выхода за границы (0 до len-1 включительно)
+            row_idx = self.random.randrange(0, len(clients_df))
+            base_row = clients_df.iloc[row_idx].copy()
+            dup_row = base_row.copy()
+            if self.random.random() >= same_org_pct and len(available_org_units) > 0:
+                try:
+                    new_org = available_org_units.sample(n=1, random_state=None).iloc[0]
+                    dup_row[org_code_col] = new_org[org_code_col]
+                    dup_row[tb_col] = new_org[tb_col]
+                    dup_row[gosb_col] = new_org[gosb_col]
+                except (ValueError, IndexError):
+                    pass
+            result_rows.append(dup_row)
+        
+        # Если строк слишком много, обрезаем до целевого количества
+        if len(result_rows) > target_total_rows:
+            result_rows = result_rows[:target_total_rows]
+        
+        result_df = pd.DataFrame(result_rows).reset_index(drop=True)
+        self.logger.debug(f"Дублирование строк для месяца {month}: {len(clients_df)} -> {len(result_df)} строк [class: FactSheetGenerator | def: _duplicate_rows]")
+        
+        return result_df
+    
+    def _redistribute_managers_and_inns(self, clients_df: pd.DataFrame, month: int) -> pd.DataFrame:
+        """
+        Перераспределяет табельные номера менеджеров и ИНН по месяцам для варианта.
+        Использует изначально сгенерированные ТН и ИНН, но меняет их распределение.
+        Использует от 85% до 100% исходных табельных номеров и от 70% до 100% исходных ИНН.
+        
+        Args:
+            clients_df: DataFrame с клиентами
+            month: Номер месяца (1-12)
+            
+        Returns:
+            DataFrame с перераспределенными данными
+        """
+        result_df = clients_df.copy()
+        
+        # Получаем все уникальные табельные номера и ИНН из исходных данных
+        tab_col = f'Месяц_{month}_Табельный номер'
+        inn_col = 'ИНН'
+        
+        if tab_col not in result_df.columns:
+            return result_df
+        
+        # Получаем все уникальные табельные номера из исходных данных (CLIENT_CNG)
+        all_tabs = self.client_cng_data[tab_col].astype(str).unique()
+        all_tabs = [t for t in all_tabs if t != '-' and t != 'nan' and t != '' and not pd.isna(t)]
+        
+        # Получаем все уникальные ИНН из исходных данных
+        all_inns = self.client_cng_data[inn_col].astype(str).unique()
+        all_inns = [i for i in all_inns if i != 'nan' and not pd.isna(i)]
+        
+        # Выбираем случайный процент использования исходных данных
+        # Табельные номера: от 85% до 100%
+        tabs_pct = self.random.uniform(0.85, 1.0)
+        tabs_count = max(1, int(len(all_tabs) * tabs_pct))
+        selected_tabs = all_tabs[:tabs_count]
+        
+        # ИНН: от 70% до 100%
+        inns_pct = self.random.uniform(0.70, 1.0)
+        inns_count = max(1, int(len(all_inns) * inns_pct))
+        selected_inns = all_inns[:inns_count]
+        
+        # Перемешиваем для случайного распределения
+        self.random.shuffle(selected_tabs)
+        self.random.shuffle(selected_inns)
+        
+        self.logger.debug(f"Использовано {len(selected_tabs)} из {len(all_tabs)} табельных номеров ({tabs_pct*100:.1f}%) и {len(selected_inns)} из {len(all_inns)} ИНН ({inns_pct*100:.1f}%) для месяца {month} [class: FactSheetGenerator | def: _redistribute_managers_and_inns]")
+        
+        # Перераспределяем табельные номера
+        tab_idx = 0
+        for idx in range(len(result_df)):
+            if tab_idx >= len(selected_tabs):
+                tab_idx = 0
+            result_df.at[result_df.index[idx], tab_col] = selected_tabs[tab_idx]
+            tab_idx += 1
+        
+        # Перераспределяем ИНН
+        inn_idx = 0
+        for idx in range(len(result_df)):
+            if inn_idx >= len(selected_inns):
+                inn_idx = 0
+            result_df.at[result_df.index[idx], inn_col] = selected_inns[inn_idx]
+            inn_idx += 1
+        
+        # Обновляем данные менеджеров на основе новых табельных номеров
+        if self.include_managers:
+            month_managers = self.managers_cache.get(month, {})
+            if month_managers:
+                fio_col = f'Месяц_{month}_ФИО'
+                org_code_col = f'Месяц_{month}_Код подразделения'
+                tb_col = f'Месяц_{month}_Короткое ТБ'
+                gosb_col = f'Месяц_{month}_Полное ГОСБ'
+                
+                def get_manager_info(tab_num, field):
+                    if pd.isna(tab_num) or str(tab_num).strip() == '-' or str(tab_num).strip() == '':
+                        return '-'
+                    tab_str = str(tab_num).strip()
+                    manager = month_managers.get(tab_str, None)
+                    if manager is None:
+                        tab_zfilled = tab_str.zfill(8)
+                        manager = month_managers.get(tab_zfilled, None)
+                    if manager is None:
+                        tab_no_zeros = tab_str.lstrip('0')
+                        if tab_no_zeros:
+                            manager = month_managers.get(tab_no_zeros, None)
+                    if manager:
+                        return manager.get(field, '-')
+                    return '-'
+                
+                result_df[fio_col] = result_df[tab_col].apply(lambda x: get_manager_info(x, 'ФИО'))
+                result_df[org_code_col] = result_df[tab_col].apply(lambda x: get_manager_info(x, 'Код подразделения'))
+                result_df[tb_col] = result_df[tab_col].apply(lambda x: get_manager_info(x, 'Короткое ТБ'))
+                result_df[gosb_col] = result_df[tab_col].apply(lambda x: get_manager_info(x, 'Полное ГОСБ'))
+        
+        self.logger.debug(f"Перераспределение данных для месяца {month}: {len(result_df)} строк [class: FactSheetGenerator | def: _redistribute_managers_and_inns]")
+        
+        return result_df
+    
+    def _generate_up_facts(self, clients_df: pd.DataFrame, month: int, prefix: str = '') -> pd.DataFrame:
         """
         Генерирует нарастающие факты (UP) для клиентов.
         
@@ -3490,8 +3866,9 @@ class FactSheetGenerator:
             facts = random_values.tolist()
             
             # Сохраняем в хранилище
+            storage_prefix = prefix if self.generate_separate_data else ''
             for idx, (_, row) in enumerate(clients_df.iterrows()):
-                client_key = (str(row['ИНН']).strip(), idx)
+                client_key = (storage_prefix, str(row['ИНН']).strip(), idx)
                 if client_key not in self.facts_storage:
                     self.facts_storage[client_key] = {}
                 self.facts_storage[client_key][month] = facts[idx]
@@ -3506,8 +3883,9 @@ class FactSheetGenerator:
             decrease_idx = 0
             zero_growth_idx = 0
             
+            storage_prefix = prefix if self.generate_separate_data else ''
             for idx, row in clients_df.iterrows():
-                client_key = (str(row['ИНН']).strip(), idx)
+                client_key = (storage_prefix, str(row['ИНН']).strip(), idx)
                 
                 # Находим последний месяц с фактом для этого клиента
                 prev_fact = 0
@@ -3573,7 +3951,7 @@ class FactSheetGenerator:
         result_df[fact_col] = facts
         return result_df
     
-    def _generate_dif_facts(self, clients_df: pd.DataFrame, month: int) -> pd.DataFrame:
+    def _generate_dif_facts(self, clients_df: pd.DataFrame, month: int, prefix: str = '') -> pd.DataFrame:
         """
         Генерирует дифференциальные факты (DIF) для клиентов.
         
@@ -3628,8 +4006,9 @@ class FactSheetGenerator:
             facts = random_values.tolist()
             
             # Сохраняем в хранилище
+            storage_prefix = prefix if self.generate_separate_data else ''
             for idx, (_, row) in enumerate(clients_df.iterrows()):
-                client_key = (str(row['ИНН']).strip(), idx)
+                client_key = (storage_prefix, str(row['ИНН']).strip(), idx)
                 if client_key not in self.facts_storage:
                     self.facts_storage[client_key] = {}
                 self.facts_storage[client_key][month] = facts[idx]
@@ -3639,8 +4018,9 @@ class FactSheetGenerator:
             fall_to_zero_count = int(len(clients_df) * fall_to_zero_pct)
             fall_to_zero_idx = 0
             
+            storage_prefix = prefix if self.generate_separate_data else ''
             for idx, row in clients_df.iterrows():
-                client_key = (str(row['ИНН']).strip(), idx)
+                client_key = (storage_prefix, str(row['ИНН']).strip(), idx)
                 
                 # Находим последний месяц с фактом для этого клиента
                 prev_fact = 0
@@ -4066,7 +4446,8 @@ class FactSheetGenerator:
             Путь к созданному файлу
         """
         # Формируем имя файла: M-{month}_{prefix}_{fact_type}_{timestamp}
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M")
+        # Формат времени: YYYYMMDD_HH (без минут)
+        timestamp = datetime.now().strftime("%Y%m%d_%H")
         if prefix:
             filename = f"M-{month}_{prefix}_{fact_type}_{timestamp}.xlsx"
         else:
@@ -4263,18 +4644,51 @@ class FactSheetGenerator:
             self.logger.info(f"Создание отдельных файлов для {len(selected_pairs)} уникальных комбинаций месяц/тип/префикс")
             
             for month, fact_type, prefix in sorted(selected_pairs, key=lambda x: (x[0], x[1], x[2])):
-                self.logger.info(f"Создание отдельного файла для месяца {month} типа {fact_type} с префиксом {prefix}")
+                # Определяем целевое количество строк для каждого файла отдельно
+                target_total_rows = self.random.randint(
+                    self.total_rows_range.get('min', 150_000),
+                    self.total_rows_range.get('max', 600_000)
+                )
                 
-                # Используем уже сгенерированные данные из основного файла
-                key = (month, fact_type)
-                if key in generated_data:
-                    clients_df = generated_data[key]
-                    # Сохраняем в отдельный файл с указанным префиксом
-                    filepath = self._save_month_sheet(clients_df, month, fact_type, prefix)
-                    created_files.append(filepath)
-                    self.logger.info(f"Создан отдельный файл для месяца {month} типа {fact_type} с префиксом {prefix}: {len(clients_df)} клиентов")
+                self.logger.info(f"Создание отдельного файла для месяца {month} типа {fact_type} с префиксом {prefix} (целевое количество строк: {target_total_rows:,})")
+                
+                # Если включена генерация отдельных данных для каждого варианта
+                if self.generate_separate_data:
+                    # Фильтруем клиентов для этого месяца
+                    clients_df = self._filter_clients_for_month(month)
+                    
+                    if clients_df.empty:
+                        self.logger.warning(f"Не найдено клиентов для месяца {month} варианта {prefix}")
+                        continue
+                    
+                    # Дублируем строки
+                    if self.duplication_enabled:
+                        clients_df = self._duplicate_rows(clients_df, month, target_total_rows)
+                    
+                    # Перераспределяем табельные номера и ИНН
+                    clients_df = self._redistribute_managers_and_inns(clients_df, month)
+                    
+                    # Генерируем факты заново для этого варианта
+                    if fact_type == 'UP':
+                        clients_df = self._generate_up_facts(clients_df, month, prefix)
+                    else:
+                        clients_df = self._generate_dif_facts(clients_df, month, prefix)
+                    
+                    # Добавляем данные менеджеров (если нужно)
+                    clients_df = self._add_managers_data(clients_df, month)
                 else:
-                    self.logger.warning(f"Не найдены данные для месяца {month} типа {fact_type}")
+                    # Используем уже сгенерированные данные из основного файла
+                    key = (month, fact_type)
+                    if key in generated_data:
+                        clients_df = generated_data[key].copy()
+                    else:
+                        self.logger.warning(f"Не найдены данные для месяца {month} типа {fact_type}")
+                        continue
+                
+                # Сохраняем в отдельный файл с указанным префиксом
+                filepath = self._save_month_sheet(clients_df, month, fact_type, prefix)
+                created_files.append(filepath)
+                self.logger.info(f"Создан отдельный файл для месяца {month} типа {fact_type} с префиксом {prefix}: {len(clients_df):,} строк")
         else:
             self.logger.info("Отдельные файлы не создаются (selected_months пуст)")
         
