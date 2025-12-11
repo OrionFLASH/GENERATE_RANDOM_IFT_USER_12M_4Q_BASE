@@ -3504,7 +3504,7 @@ class FactSheetGenerator:
         # Параметры дублирования строк
         self.duplication_config = config.get('row_duplication', {})
         self.duplication_enabled = self.duplication_config.get('enabled', True)
-        self.total_rows_range = config.get('total_rows_range', {'min': 150_000, 'max': 600_000})
+        self.total_rows_range = config.get('total_rows_range', {'min': 50_000, 'max': 300_000})
         self.generate_separate_data = config.get('generate_separate_data_per_variant', True)
         
         # Параметры параллельной обработки
