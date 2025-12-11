@@ -3635,33 +3635,17 @@ class FactSheetGenerator:
         # Используем переданный генератор или self.random
         rng = random_gen if random_gen is not None else self.random
         
-        # Вычисляем количество уникальных клиентов для каждой категории
-        # Распределение применяется к целевым строкам, а не к исходным клиентам
-        # Оцениваем среднее количество строк на клиента для каждой категории
-        avg_duplicates_2_5 = 3.5  # Среднее между 2 и 5
-        avg_duplicates_6_9 = 7.5  # Среднее между 6 и 9
-        avg_duplicates_10_50 = 30.0  # Среднее между 10 и 50
+        # ВАЖНО: Используем ВСЕ доступные клиенты из базовых данных
+        # Количество уникальных клиентов должно быть одинаковым для всех файлов внутри группы префикса
+        # Меняется только количество дублей для достижения целевого количества строк
+        total_base = len(clients_df)
         
-        # Вычисляем ожидаемое количество строк на уникального клиента для каждой категории
-        expected_rows_per_client = (
-            no_duplicates_pct * 1.0 +  # 1 строка на клиента без дублей
-            duplicates_2_5_pct * avg_duplicates_2_5 +  # Среднее 3.5 строки на клиента
-            duplicates_6_9_pct * avg_duplicates_6_9 +  # Среднее 7.5 строки на клиента
-            duplicates_10_50_pct * avg_duplicates_10_50  # Среднее 30 строк на клиента
-        )
-        
-        # Вычисляем сколько уникальных клиентов нужно для достижения целевого количества строк
-        # С запасом на случай, если реальное количество дублей будет меньше среднего
-        unique_clients_needed = int(target_total_rows / expected_rows_per_client * 1.1)  # 10% запас
-        
-        # Ограничиваем максимальным количеством доступных клиентов
-        unique_clients_needed = min(unique_clients_needed, len(clients_df))
-        
-        # Вычисляем количество уникальных клиентов для каждой категории
-        no_duplicates_count = int(unique_clients_needed * no_duplicates_pct)
-        duplicates_2_5_count = int(unique_clients_needed * duplicates_2_5_pct)
-        duplicates_6_9_count = int(unique_clients_needed * duplicates_6_9_pct)
-        duplicates_10_50_count = int(unique_clients_needed * duplicates_10_50_pct)
+        # Вычисляем количество уникальных клиентов для каждой категории на основе распределения
+        # Это количество будет одинаковым для всех файлов внутри группы префикса
+        no_duplicates_count = int(total_base * no_duplicates_pct)
+        duplicates_2_5_count = int(total_base * duplicates_2_5_pct)
+        duplicates_6_9_count = int(total_base * duplicates_6_9_pct)
+        duplicates_10_50_count = int(total_base * duplicates_10_50_pct)
         
         # Создаем список для результата
         result_rows = []
@@ -3764,13 +3748,15 @@ class FactSheetGenerator:
             idx += 1
         
         # Если нужно больше строк, добавляем случайные дубликаты до достижения целевого количества
-        # Используем циклический доступ к клиентам
+        # Используем циклический доступ к клиентам из базовых данных
+        # Это обеспечивает, что используются те же клиенты, просто с разным количеством дублей
         client_cycle_idx = 0
         while len(result_rows) < target_total_rows and len(clients_df) > 0:
             # Используем циклический доступ к клиентам
             row_idx = client_cycle_idx % len(clients_df)
             base_row = clients_df.iloc[row_idx].copy()
             dup_row = base_row.copy()
+            # Для дополнительных дублей используем случайное распределение ТБ/ГОСБ
             if rng.random() >= same_org_pct and len(available_org_units) > 0:
                 try:
                     new_org = available_org_units.sample(n=1, random_state=None).iloc[0]
