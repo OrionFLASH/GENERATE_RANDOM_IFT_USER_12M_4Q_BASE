@@ -676,16 +676,15 @@ class ProjectLogger:
                 debug_handler = handler
                 break
         
-        if debug_handler:
-            # Перенаправляем warnings в логгер
-            def warning_to_logger(message, category, filename, lineno, file=None, line=None):
-                warning_msg = f"{category.__name__}: {str(message).strip()} (файл: {filename}, строка: {lineno})"
-                self.logger.debug(warning_msg)
-            
-            # Устанавливаем обработчик warnings
-            warnings.showwarning = warning_to_logger
-            # Включаем отображение всех warnings
-            warnings.filterwarnings('always')
+        # Перенаправляем warnings в логгер (независимо от наличия debug_handler)
+        def warning_to_logger(message, category, filename, lineno, file=None, line=None):
+            warning_msg = f"{category.__name__}: {str(message).strip()} (файл: {filename}, строка: {lineno})"
+            self.logger.debug(warning_msg)
+        
+        # Устанавливаем обработчик warnings
+        warnings.showwarning = warning_to_logger
+        # Включаем отображение всех warnings
+        warnings.filterwarnings('always')
     
     def get_logger(self) -> logging.Logger:
         """
