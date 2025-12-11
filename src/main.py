@@ -4594,6 +4594,16 @@ class FactSheetGenerator:
         result_df = df[columns].copy()
         result_df = self._rename_month_columns(result_df, month)
         
+        # Оптимизация: обновляем значения в DataFrame перед сохранением
+        if 'ИНН' in result_df.columns:
+            result_df['ИНН'] = result_df['ИНН'].astype(str).apply(
+                lambda x: x.zfill(12) if x not in ['nan', '', '-'] else x
+            )
+        if self.include_managers and 'Табельный номер' in result_df.columns:
+            result_df['Табельный номер'] = result_df['Табельный номер'].astype(str).apply(
+                lambda x: x.zfill(8) if x not in ['nan', '', '-'] else x
+            )
+        
         # Сохраняем в Excel
         with pd.ExcelWriter(filepath, engine='openpyxl') as writer:
             result_df.to_excel(writer, sheet_name=self.sheet_name, index=False)
@@ -4601,15 +4611,16 @@ class FactSheetGenerator:
             # Получаем объект листа для форматирования
             worksheet = writer.sheets[self.sheet_name]
             
-            # Устанавливаем текстовый формат для колонки ИНН
+            # Оптимизация: используем batch операции для форматирования вместо циклов
             from openpyxl.utils import get_column_letter
+            
+            # Устанавливаем текстовый формат для колонки ИНН (batch операция)
             inn_col_idx = list(result_df.columns).index('ИНН') + 1
             inn_col_letter = get_column_letter(inn_col_idx)
-            for row in range(2, len(result_df) + 2):
-                cell = worksheet[f'{inn_col_letter}{row}']
+            inn_col = worksheet[inn_col_letter]
+            # Устанавливаем формат для всех ячеек колонки сразу (кроме заголовка)
+            for cell in inn_col[1:]:
                 cell.number_format = '@'
-                if cell.value and str(cell.value) != 'nan' and str(cell.value).strip() != '':
-                    cell.value = str(cell.value).zfill(12)
             
             # Устанавливаем текстовый формат для табельных номеров (если есть)
             if self.include_managers:
@@ -4617,20 +4628,18 @@ class FactSheetGenerator:
                 if tab_col_name in result_df.columns:
                     tab_col_idx = list(result_df.columns).index(tab_col_name) + 1
                     tab_col_letter = get_column_letter(tab_col_idx)
-                    for row in range(2, len(result_df) + 2):
-                        cell = worksheet[f'{tab_col_letter}{row}']
+                    tab_col = worksheet[tab_col_letter]
+                    for cell in tab_col[1:]:  # Пропускаем заголовок
                         cell.number_format = '@'
-                        if cell.value and str(cell.value) != '-' and str(cell.value) != 'nan' and str(cell.value).strip() != '':
-                            cell.value = str(cell.value).zfill(8)
             
-            # Устанавливаем числовой формат для колонки факта (с разделителем разрядов и двумя знаками после запятой)
+            # Устанавливаем числовой формат для колонки факта (batch операция)
             fact_col_name = 'Факт'
             if fact_col_name in result_df.columns:
                 fact_col_idx = list(result_df.columns).index(fact_col_name) + 1
                 fact_col_letter = get_column_letter(fact_col_idx)
-                for row in range(2, len(result_df) + 2):
-                    cell = worksheet[f'{fact_col_letter}{row}']
-                    # Формат: #,##0.00 (числовой с разделителем тысяч и двумя знаками после запятой)
+                fact_col = worksheet[fact_col_letter]
+                # Формат: #,##0.00 (числовой с разделителем тысяч и двумя знаками после запятой)
+                for cell in fact_col[1:]:  # Пропускаем заголовок
                     cell.number_format = '#,##0.00'
             
             # Закрепляем первую строку
