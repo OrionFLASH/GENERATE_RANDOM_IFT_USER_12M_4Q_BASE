@@ -4851,6 +4851,18 @@ class FactSheetGenerator:
         if selected_pairs:
             self.logger.info(f"Создание отдельных файлов для {len(selected_pairs)} уникальных комбинаций месяц/тип/префикс")
             
+            # Генерируем базовые данные для каждого уникального префикса ДО параллельной обработки
+            # Это обеспечивает одинаковое закрепление КМ и клиентов внутри группы префикса
+            if self.generate_separate_data:
+                unique_prefixes = set()
+                for _, fact_type, prefix in selected_pairs:
+                    if prefix:  # Пропускаем пустые префиксы
+                        unique_prefixes.add((prefix, fact_type))
+                
+                self.logger.info(f"Предварительная генерация базовых данных для {len(unique_prefixes)} уникальных префиксов")
+                for prefix, fact_type in unique_prefixes:
+                    self._generate_base_data_for_prefix(prefix, fact_type)
+            
             # Используем параллельную обработку для ускорения создания файлов
             if self.max_workers > 1 and len(selected_pairs) > 1:
                 self.logger.info(f"Использование параллельной обработки с {min(self.max_workers, len(selected_pairs))} потоками")
