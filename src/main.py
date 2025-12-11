@@ -4287,20 +4287,27 @@ class FactSheetGenerator:
                     # Нормализуем табельные номера в result_df
                     result_df['_tab_key'] = result_df[client_tab_col].astype(str).str.strip()
                     
+                    # Переименовываем колонки в lookup DataFrame, чтобы избежать конфликтов
+                    manager_lookup_df_renamed = manager_lookup_df.rename(columns={
+                        'ФИО': 'ФИО_manager',
+                        'Код подразделения': 'Код подразделения_manager',
+                        'Короткое ТБ': 'Короткое ТБ_manager',
+                        'Полное ГОСБ': 'Полное ГОСБ_manager'
+                    })
+                    
                     # Используем merge для быстрого поиска (векторизованная операция)
                     result_df = result_df.merge(
-                        manager_lookup_df,
+                        manager_lookup_df_renamed,
                         left_on='_tab_key',
                         right_index=True,
-                        how='left',
-                        suffixes=('', '_manager')
+                        how='left'
                     )
                     
-                    # Заполняем колонки менеджеров
-                    result_df[fio_col] = result_df['ФИО_manager'].fillna('-')
-                    result_df[org_code_col] = result_df['Код подразделения_manager'].fillna('-')
-                    result_df[tb_col] = result_df['Короткое ТБ_manager'].fillna('-')
-                    result_df[gosb_col] = result_df['Полное ГОСБ_manager'].fillna('-')
+                    # Заполняем колонки менеджеров (с проверкой наличия колонок)
+                    result_df[fio_col] = result_df.get('ФИО_manager', pd.Series(['-'] * len(result_df), index=result_df.index)).fillna('-')
+                    result_df[org_code_col] = result_df.get('Код подразделения_manager', pd.Series(['-'] * len(result_df), index=result_df.index)).fillna('-')
+                    result_df[tb_col] = result_df.get('Короткое ТБ_manager', pd.Series(['-'] * len(result_df), index=result_df.index)).fillna('-')
+                    result_df[gosb_col] = result_df.get('Полное ГОСБ_manager', pd.Series(['-'] * len(result_df), index=result_df.index)).fillna('-')
                     
                     # Удаляем временные колонки
                     result_df.drop(['_tab_key', 'ФИО_manager', 'Код подразделения_manager', 'Короткое ТБ_manager', 'Полное ГОСБ_manager'], axis=1, errors='ignore', inplace=True)
