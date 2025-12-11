@@ -546,8 +546,8 @@ LOADER_CONFIG = {
             'different_org_unit_pct': 0.40  # 40% дублируемых строк имеют другие ТБ/ГОСБ
         },
         'total_rows_range': {
-            'min': 70_000,  # Минимальное количество строк
-            'max': 600_000  # Максимальное количество строк
+            'min': 50_000,  # Минимальное количество строк
+            'max': 300_000  # Максимальное количество строк
         },
         'generate_separate_data_per_variant': True,  # Генерировать отдельные данные для каждого варианта (prefix)
         'max_workers': 16  # Максимальное количество потоков для параллельной обработки файлов
@@ -3611,7 +3611,7 @@ class FactSheetGenerator:
     
     def _duplicate_rows(self, clients_df: pd.DataFrame, month: int, target_total_rows: int, random_gen: Optional[random.Random] = None) -> pd.DataFrame:
         """
-        Дублирует строки клиентов согласно конфигурации.
+        Дублирует строки клиентов согласно конфигурации (оптимизированная версия с векторизацией).
         
         Args:
             clients_df: DataFrame с клиентами
@@ -3636,26 +3636,19 @@ class FactSheetGenerator:
         rng = random_gen if random_gen is not None else self.random
         
         # ВАЖНО: Используем ВСЕ доступные клиенты из базовых данных
-        # Количество уникальных клиентов должно быть одинаковым для всех файлов внутри группы префикса
-        # Меняется только количество дублей для достижения целевого количества строк
         total_base = len(clients_df)
         
-        # Вычисляем количество уникальных клиентов для каждой категории на основе распределения
-        # Это количество будет одинаковым для всех файлов внутри группы префикса
+        # Вычисляем количество уникальных клиентов для каждой категории
         no_duplicates_count = int(total_base * no_duplicates_pct)
         duplicates_2_5_count = int(total_base * duplicates_2_5_pct)
         duplicates_6_9_count = int(total_base * duplicates_6_9_pct)
         duplicates_10_50_count = int(total_base * duplicates_10_50_pct)
         
-        # Создаем список для результата
-        result_rows = []
-        
-        # Получаем все доступные ТБ/ГОСБ для перераспределения из исходных данных
+        # Получаем все доступные ТБ/ГОСБ для перераспределения
         tb_col = f'Месяц_{month}_Короткое ТБ'
         gosb_col = f'Месяц_{month}_Полное ГОСБ'
         org_code_col = f'Месяц_{month}_Код подразделения'
         
-        # Используем исходные данные для получения всех доступных ТБ/ГОСБ
         available_org_units = self.client_cng_data[[org_code_col, tb_col, gosb_col]].drop_duplicates()
         available_org_units = available_org_units[
             (available_org_units[org_code_col].astype(str).str.strip() != '-') &
@@ -3664,119 +3657,100 @@ class FactSheetGenerator:
             (available_org_units[gosb_col].astype(str).str.strip() != '-')
         ]
         
+        # Подготавливаем список для хранения дубликатов (используем индексы для эффективности)
+        duplicate_indices = []
+        duplicate_org_changes = []  # Список кортежей (idx_in_result, new_org_idx) для изменения ТБ/ГОСБ
+        
         idx = 0
         
-        # 65% без дублирования
-        for i in range(min(no_duplicates_count, len(clients_df))):
-            if idx >= len(clients_df):
-                break
-            row = clients_df.iloc[idx].copy()
-            result_rows.append(row)
-            idx += 1
+        # 65% без дублирования - просто добавляем индексы
+        no_dup_indices = list(range(min(no_duplicates_count, len(clients_df))))
+        duplicate_indices.extend(no_dup_indices)
+        idx = len(no_dup_indices)
         
         # 20% 2-5 дублей
         for i in range(duplicates_2_5_count):
             if idx >= len(clients_df):
-                idx = 0  # Начинаем заново, если нужно
-            base_row = clients_df.iloc[idx % len(clients_df)].copy()
-            num_duplicates = rng.randint(2, 6)  # 2-5 дублей
+                idx = 0
+            base_idx = idx % len(clients_df)
+            num_duplicates = rng.randint(2, 6)
             
             for dup in range(num_duplicates):
-                dup_row = base_row.copy()
-                # 60% тот же ТБ/ГОСБ, 40% другие
-                if rng.random() < same_org_pct:
-                    # Оставляем тот же ТБ/ГОСБ
-                    pass
-                else:
-                    # Выбираем другой ТБ/ГОСБ
-                    if len(available_org_units) > 0:
-                        try:
-                            new_org = available_org_units.sample(n=1, random_state=None).iloc[0]
-                            dup_row[org_code_col] = new_org[org_code_col]
-                            dup_row[tb_col] = new_org[tb_col]
-                            dup_row[gosb_col] = new_org[gosb_col]
-                        except (ValueError, IndexError):
-                            # Если не удалось выбрать, оставляем исходные значения
-                            pass
-                result_rows.append(dup_row)
+                dup_result_idx = len(duplicate_indices)
+                duplicate_indices.append(base_idx)
+                # 40% меняем ТБ/ГОСБ
+                if rng.random() >= same_org_pct and len(available_org_units) > 0:
+                    org_idx = rng.randint(0, len(available_org_units))
+                    duplicate_org_changes.append((dup_result_idx, org_idx))
             idx += 1
         
         # 10% 6-9 дублей
         for i in range(duplicates_6_9_count):
             if idx >= len(clients_df):
                 idx = 0
-            base_row = clients_df.iloc[idx % len(clients_df)].copy()
-            num_duplicates = rng.randint(6, 10)  # 6-9 дублей
+            base_idx = idx % len(clients_df)
+            num_duplicates = rng.randint(6, 10)
             
             for dup in range(num_duplicates):
-                dup_row = base_row.copy()
-                if rng.random() < same_org_pct:
-                    pass
-                else:
-                    if len(available_org_units) > 0:
-                        try:
-                            new_org = available_org_units.sample(n=1, random_state=None).iloc[0]
-                            dup_row[org_code_col] = new_org[org_code_col]
-                            dup_row[tb_col] = new_org[tb_col]
-                            dup_row[gosb_col] = new_org[gosb_col]
-                        except (ValueError, IndexError):
-                            pass
-                result_rows.append(dup_row)
+                dup_result_idx = len(duplicate_indices)
+                duplicate_indices.append(base_idx)
+                if rng.random() >= same_org_pct and len(available_org_units) > 0:
+                    org_idx = rng.randint(0, len(available_org_units))
+                    duplicate_org_changes.append((dup_result_idx, org_idx))
             idx += 1
         
         # 5% от 10 до 50 дублей
         for i in range(duplicates_10_50_count):
             if idx >= len(clients_df):
                 idx = 0
-            base_row = clients_df.iloc[idx % len(clients_df)].copy()
-            num_duplicates = rng.randint(10, 51)  # 10-50 дублей
+            base_idx = idx % len(clients_df)
+            num_duplicates = rng.randint(10, 51)
             
             for dup in range(num_duplicates):
-                dup_row = base_row.copy()
-                if rng.random() < same_org_pct:
-                    pass
-                else:
-                    if len(available_org_units) > 0:
-                        try:
-                            new_org = available_org_units.sample(n=1, random_state=None).iloc[0]
-                            dup_row[org_code_col] = new_org[org_code_col]
-                            dup_row[tb_col] = new_org[tb_col]
-                            dup_row[gosb_col] = new_org[gosb_col]
-                        except (ValueError, IndexError):
-                            pass
-                result_rows.append(dup_row)
+                dup_result_idx = len(duplicate_indices)
+                duplicate_indices.append(base_idx)
+                if rng.random() >= same_org_pct and len(available_org_units) > 0:
+                    org_idx = rng.randint(0, len(available_org_units))
+                    duplicate_org_changes.append((dup_result_idx, org_idx))
             idx += 1
         
-        # Если нужно больше строк, добавляем случайные дубликаты до достижения целевого количества
-        # Используем циклический доступ к клиентам из базовых данных
-        # Это обеспечивает, что используются те же клиенты, просто с разным количеством дублей
+        # Если нужно больше строк, добавляем случайные дубликаты
         client_cycle_idx = 0
-        while len(result_rows) < target_total_rows and len(clients_df) > 0:
-            # Используем циклический доступ к клиентам
+        while len(duplicate_indices) < target_total_rows and len(clients_df) > 0:
             row_idx = client_cycle_idx % len(clients_df)
-            base_row = clients_df.iloc[row_idx].copy()
-            dup_row = base_row.copy()
-            # Для дополнительных дублей используем случайное распределение ТБ/ГОСБ
+            dup_result_idx = len(duplicate_indices)
+            duplicate_indices.append(row_idx)
             if rng.random() >= same_org_pct and len(available_org_units) > 0:
-                try:
-                    new_org = available_org_units.sample(n=1, random_state=None).iloc[0]
-                    dup_row[org_code_col] = new_org[org_code_col]
-                    dup_row[tb_col] = new_org[tb_col]
-                    dup_row[gosb_col] = new_org[gosb_col]
-                except (ValueError, IndexError):
-                    pass
-            result_rows.append(dup_row)
+                org_idx = rng.randint(0, len(available_org_units))
+                duplicate_org_changes.append((dup_result_idx, org_idx))
             client_cycle_idx += 1
         
-        # Если строк слишком много, обрезаем до целевого количества
-        if len(result_rows) > target_total_rows:
-            result_rows = result_rows[:target_total_rows]
+        # Обрезаем до целевого количества
+        if len(duplicate_indices) > target_total_rows:
+            duplicate_indices = duplicate_indices[:target_total_rows]
+            # Фильтруем изменения ТБ/ГОСБ
+            duplicate_org_changes = [(i, org_idx) for i, org_idx in duplicate_org_changes if i < target_total_rows]
         
-        # Проверяем, что достигли целевого количества строк
-        if len(result_rows) < target_total_rows:
-            self.logger.warning(f"Не удалось достичь целевого количества строк: {len(result_rows)} из {target_total_rows} для месяца {month} [class: FactSheetGenerator | def: _duplicate_rows]")
+        # Векторизованное создание DataFrame из индексов
+        result_df = clients_df.iloc[duplicate_indices].reset_index(drop=True)
         
-        result_df = pd.DataFrame(result_rows).reset_index(drop=True)
+        # Применяем изменения ТБ/ГОСБ векторизованно
+        if duplicate_org_changes and len(available_org_units) > 0:
+            # Создаем массив изменений
+            org_changes_dict = {idx: org_idx for idx, org_idx in duplicate_org_changes}
+            change_indices = list(org_changes_dict.keys())
+            if change_indices:
+                # Получаем новые значения ТБ/ГОСБ
+                new_orgs = available_org_units.iloc[[org_changes_dict[idx] for idx in change_indices]]
+                # Применяем изменения векторизованно
+                result_df.loc[change_indices, org_code_col] = new_orgs[org_code_col].values
+                result_df.loc[change_indices, tb_col] = new_orgs[tb_col].values
+                result_df.loc[change_indices, gosb_col] = new_orgs[gosb_col].values
+        
+        # Проверяем результат
+        if len(result_df) < target_total_rows:
+            self.logger.warning(f"Не удалось достичь целевого количества строк: {len(result_df)} из {target_total_rows} для месяца {month} [class: FactSheetGenerator | def: _duplicate_rows]")
+        
         self.logger.debug(f"Дублирование строк для месяца {month}: {len(clients_df)} -> {len(result_df)} строк [class: FactSheetGenerator | def: _duplicate_rows]")
         
         return result_df
@@ -4651,12 +4625,14 @@ class FactSheetGenerator:
             # Оптимизация: устанавливаем формат для колонок через column_dimensions (быстрее чем цикл по ячейкам)
             from openpyxl.utils import get_column_letter
             
-            # Устанавливаем текстовый формат для колонки ИНН
+            # Оптимизация: устанавливаем формат для колонок через column_dimensions (быстрее)
             inn_col_idx = list(result_df.columns).index('ИНН') + 1
             inn_col_letter = get_column_letter(inn_col_idx)
-            # Используем более эффективный способ - устанавливаем формат для диапазона
-            for row_idx in range(2, len(result_df) + 2):
-                worksheet[f'{inn_col_letter}{row_idx}'].number_format = '@'
+            # Устанавливаем текстовый формат для всей колонки ИНН через batch операцию
+            from openpyxl.cell.cell import Cell
+            for row in worksheet.iter_rows(min_row=2, max_row=len(result_df) + 1, min_col=inn_col_idx, max_col=inn_col_idx):
+                for cell in row:
+                    cell.number_format = '@'
             
             # Устанавливаем текстовый формат для табельных номеров (если есть)
             if self.include_managers:
@@ -4664,17 +4640,20 @@ class FactSheetGenerator:
                 if tab_col_name in result_df.columns:
                     tab_col_idx = list(result_df.columns).index(tab_col_name) + 1
                     tab_col_letter = get_column_letter(tab_col_idx)
-                    for row_idx in range(2, len(result_df) + 2):
-                        worksheet[f'{tab_col_letter}{row_idx}'].number_format = '@'
+                    for row in worksheet.iter_rows(min_row=2, max_row=len(result_df) + 1, min_col=tab_col_idx, max_col=tab_col_idx):
+                        for cell in row:
+                            cell.number_format = '@'
             
-            # Устанавливаем числовой формат для колонки факта
+            # Устанавливаем числовой формат для колонки факта (оптимизированно через iter_rows)
             fact_col_name = 'Факт'
             if fact_col_name in result_df.columns:
                 fact_col_idx = list(result_df.columns).index(fact_col_name) + 1
                 fact_col_letter = get_column_letter(fact_col_idx)
                 # Формат: #,##0.00 (числовой с разделителем тысяч и двумя знаками после запятой)
-                for row_idx in range(2, len(result_df) + 2):
-                    worksheet[f'{fact_col_letter}{row_idx}'].number_format = '#,##0.00'
+                # Используем iter_rows для более эффективной обработки
+                for row in worksheet.iter_rows(min_row=2, max_row=len(result_df) + 1, min_col=fact_col_idx, max_col=fact_col_idx):
+                    for cell in row:
+                        cell.number_format = '#,##0.00'
             
             # Закрепляем первую строку
             worksheet.freeze_panes = 'A2'
@@ -4778,6 +4757,9 @@ class FactSheetGenerator:
             Путь к созданному файлу или None в случае ошибки
         """
         try:
+            import time
+            start_time = time.time()
+            
             # Создаем отдельный генератор случайных чисел для этого потока
             # Это необходимо для потокобезопасности
             import threading
@@ -4786,11 +4768,12 @@ class FactSheetGenerator:
             
             # Определяем целевое количество строк для этого файла
             target_total_rows = thread_local_random.randint(
-                self.total_rows_range.get('min', 150_000),
-                self.total_rows_range.get('max', 600_000)
+                self.total_rows_range.get('min', 50_000),
+                self.total_rows_range.get('max', 300_000)
             )
             
             self.logger.info(f"Создание отдельного файла для месяца {month} типа {fact_type} с префиксом {prefix} (целевое количество строк: {target_total_rows:,})")
+            print(f"[НАЧАЛО] M-{month}_{prefix}_{fact_type}: генерация {target_total_rows:,} строк...")
             
             # Если включена генерация отдельных данных для каждого варианта
             if self.generate_separate_data:
@@ -4818,8 +4801,12 @@ class FactSheetGenerator:
                     return None
             
             # Сохраняем в отдельный файл с указанным префиксом
+            save_start = time.time()
             filepath = self._save_month_sheet(clients_df, month, fact_type, prefix)
-            self.logger.info(f"Создан отдельный файл для месяца {month} типа {fact_type} с префиксом {prefix}: {len(clients_df):,} строк")
+            save_time = time.time() - save_start
+            total_time = time.time() - start_time
+            self.logger.info(f"Создан отдельный файл для месяца {month} типа {fact_type} с префиксом {prefix}: {len(clients_df):,} строк (время: {total_time:.1f}с, сохранение: {save_time:.1f}с)")
+            print(f"[ЗАВЕРШЕНО] M-{month}_{prefix}_{fact_type}: {len(clients_df):,} строк за {total_time:.1f}с")
             return filepath
         except Exception as e:
             self.logger.error(f"Ошибка при создании файла для месяца {month} типа {fact_type} с префиксом {prefix}: {str(e)}", exc_info=True)
@@ -4960,6 +4947,13 @@ class FactSheetGenerator:
                         for month, fact_type, prefix in sorted(selected_pairs, key=lambda x: (x[0], x[1], x[2]))
                     }
                     
+                    # Добавляем периодический вывод статуса
+                    import time
+                    start_time = time.time()
+                    last_status_time = start_time
+                    total_tasks = len(future_to_pair)
+                    completed_tasks = 0
+                    
                     # Собираем результаты по мере выполнения
                     for future in as_completed(future_to_pair):
                         month, fact_type, prefix = future_to_pair[future]
@@ -4967,8 +4961,24 @@ class FactSheetGenerator:
                             filepath = future.result()
                             if filepath:
                                 created_files.append(filepath)
+                            completed_tasks += 1
+                            
+                            # Выводим статус каждые 15 секунд
+                            current_time = time.time()
+                            if current_time - last_status_time >= 15:
+                                elapsed = current_time - start_time
+                                progress_pct = (completed_tasks / total_tasks) * 100
+                                print(f"[СТАТУС] Обработано файлов: {completed_tasks}/{total_tasks} ({progress_pct:.1f}%) | Время: {elapsed:.0f}с | Последний: M-{month}_{prefix}_{fact_type}")
+                                self.logger.info(f"Прогресс обработки файлов: {completed_tasks}/{total_tasks} ({progress_pct:.1f}%)")
+                                last_status_time = current_time
                         except Exception as e:
                             self.logger.error(f"Ошибка при обработке файла для месяца {month} типа {fact_type} с префиксом {prefix}: {str(e)}", exc_info=True)
+                            completed_tasks += 1
+                    
+                    # Финальный статус
+                    total_time = time.time() - start_time
+                    print(f"[ЗАВЕРШЕНО] Все файлы обработаны: {completed_tasks}/{total_tasks} | Общее время: {total_time:.0f}с")
+                    self.logger.info(f"Параллельная обработка завершена: {completed_tasks}/{total_tasks} файлов за {total_time:.0f} секунд")
             else:
                 # Последовательная обработка (если max_workers = 1 или только один файл)
                 for month, fact_type, prefix in sorted(selected_pairs, key=lambda x: (x[0], x[1], x[2])):
