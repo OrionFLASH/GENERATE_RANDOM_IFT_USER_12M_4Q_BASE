@@ -4226,63 +4226,86 @@ class FactSheetGenerator:
                 self.logger.warning(f"Табельные номера не найдены в кэше. Пример: '{sample_tab}' (zfill: '{sample_tab_zfilled}'). Ключи в кэше (первые 5): {list(month_managers.keys())[:5]} [class: FactSheetGenerator | def: _add_managers_data]")
             
             # Оптимизация: используем векторизацию pandas вместо apply для ускорения
-            # Создаем lookup DataFrame для быстрого поиска
-            manager_data_list = []
-            for tab_key, manager_info in month_managers.items():
-                tab_str = str(tab_key).strip()
-                # Добавляем все варианты табельного номера
-                manager_data_list.append({
-                    'tab_key': tab_str,
-                    'ФИО': manager_info.get('ФИО', '-'),
-                    'Код подразделения': manager_info.get('Код подразделения', '-'),
-                    'Короткое ТБ': manager_info.get('Короткое ТБ', '-'),
-                    'Полное ГОСБ': manager_info.get('Полное ГОСБ', '-')
-                })
-                # Добавляем вариант с лидирующими нулями
-                tab_zfilled = tab_str.zfill(8)
-                if tab_zfilled != tab_str:
-                    manager_data_list.append({
-                        'tab_key': tab_zfilled,
+            # Создаем lookup DataFrame для быстрого поиска (оптимизированная версия)
+            if month_managers:
+                # Создаем базовый DataFrame из словаря менеджеров
+                manager_base_data = []
+                for tab_key, manager_info in month_managers.items():
+                    manager_base_data.append({
+                        'tab_key': str(tab_key).strip(),
                         'ФИО': manager_info.get('ФИО', '-'),
                         'Код подразделения': manager_info.get('Код подразделения', '-'),
                         'Короткое ТБ': manager_info.get('Короткое ТБ', '-'),
                         'Полное ГОСБ': manager_info.get('Полное ГОСБ', '-')
                     })
-                # Добавляем вариант без лидирующих нулей
-                tab_no_zeros = tab_str.lstrip('0')
-                if tab_no_zeros and tab_no_zeros != tab_str:
-                    manager_data_list.append({
-                        'tab_key': tab_no_zeros,
-                        'ФИО': manager_info.get('ФИО', '-'),
-                        'Код подразделения': manager_info.get('Код подразделения', '-'),
-                        'Короткое ТБ': manager_info.get('Короткое ТБ', '-'),
-                        'Полное ГОСБ': manager_info.get('Полное ГОСБ', '-')
-                    })
-            
-            if manager_data_list:
-                manager_lookup_df = pd.DataFrame(manager_data_list).drop_duplicates(subset=['tab_key'], keep='first')
-                manager_lookup_df.set_index('tab_key', inplace=True)
                 
-                # Нормализуем табельные номера в result_df
-                result_df['_tab_key'] = result_df[client_tab_col].astype(str).str.strip()
-                
-                # Используем merge для быстрого поиска
-                result_df = result_df.merge(
-                    manager_lookup_df,
-                    left_on='_tab_key',
-                    right_index=True,
-                    how='left',
-                    suffixes=('', '_manager')
-                )
-                
-                # Заполняем колонки менеджеров
-                result_df[fio_col] = result_df['ФИО_manager'].fillna('-')
-                result_df[org_code_col] = result_df['Код подразделения_manager'].fillna('-')
-                result_df[tb_col] = result_df['Короткое ТБ_manager'].fillna('-')
-                result_df[gosb_col] = result_df['Полное ГОСБ_manager'].fillna('-')
-                
-                # Удаляем временные колонки
-                result_df.drop(['_tab_key', 'ФИО_manager', 'Код подразделения_manager', 'Короткое ТБ_manager', 'Полное ГОСБ_manager'], axis=1, errors='ignore', inplace=True)
+                if manager_base_data:
+                    manager_base_df = pd.DataFrame(manager_base_data)
+                    
+                    # Создаем варианты табельных номеров (с нулями и без) через векторизацию
+                    manager_base_df['tab_key_zfilled'] = manager_base_df['tab_key'].str.zfill(8)
+                    manager_base_df['tab_key_no_zeros'] = manager_base_df['tab_key'].str.lstrip('0')
+                    manager_base_df['tab_key_no_zeros'] = manager_base_df['tab_key_no_zeros'].replace('', manager_base_df['tab_key'])
+                    
+                    # Создаем расширенный lookup DataFrame со всеми вариантами
+                    lookup_rows = []
+                    for _, row in manager_base_df.iterrows():
+                        # Оригинальный ключ
+                        lookup_rows.append({
+                            'tab_key': row['tab_key'],
+                            'ФИО': row['ФИО'],
+                            'Код подразделения': row['Код подразделения'],
+                            'Короткое ТБ': row['Короткое ТБ'],
+                            'Полное ГОСБ': row['Полное ГОСБ']
+                        })
+                        # С лидирующими нулями (если отличается)
+                        if row['tab_key_zfilled'] != row['tab_key']:
+                            lookup_rows.append({
+                                'tab_key': row['tab_key_zfilled'],
+                                'ФИО': row['ФИО'],
+                                'Код подразделения': row['Код подразделения'],
+                                'Короткое ТБ': row['Короткое ТБ'],
+                                'Полное ГОСБ': row['Полное ГОСБ']
+                            })
+                        # Без лидирующих нулей (если отличается)
+                        if row['tab_key_no_zeros'] != row['tab_key']:
+                            lookup_rows.append({
+                                'tab_key': row['tab_key_no_zeros'],
+                                'ФИО': row['ФИО'],
+                                'Код подразделения': row['Код подразделения'],
+                                'Короткое ТБ': row['Короткое ТБ'],
+                                'Полное ГОСБ': row['Полное ГОСБ']
+                            })
+                    
+                    manager_lookup_df = pd.DataFrame(lookup_rows).drop_duplicates(subset=['tab_key'], keep='first')
+                    manager_lookup_df.set_index('tab_key', inplace=True)
+                    
+                    # Нормализуем табельные номера в result_df
+                    result_df['_tab_key'] = result_df[client_tab_col].astype(str).str.strip()
+                    
+                    # Используем merge для быстрого поиска (векторизованная операция)
+                    result_df = result_df.merge(
+                        manager_lookup_df,
+                        left_on='_tab_key',
+                        right_index=True,
+                        how='left',
+                        suffixes=('', '_manager')
+                    )
+                    
+                    # Заполняем колонки менеджеров
+                    result_df[fio_col] = result_df['ФИО_manager'].fillna('-')
+                    result_df[org_code_col] = result_df['Код подразделения_manager'].fillna('-')
+                    result_df[tb_col] = result_df['Короткое ТБ_manager'].fillna('-')
+                    result_df[gosb_col] = result_df['Полное ГОСБ_manager'].fillna('-')
+                    
+                    # Удаляем временные колонки
+                    result_df.drop(['_tab_key', 'ФИО_manager', 'Код подразделения_manager', 'Короткое ТБ_manager', 'Полное ГОСБ_manager'], axis=1, errors='ignore', inplace=True)
+                else:
+                    # Если нет данных менеджеров, заполняем '-'
+                    result_df[fio_col] = '-'
+                    result_df[org_code_col] = '-'
+                    result_df[tb_col] = '-'
+                    result_df[gosb_col] = '-'
             else:
                 # Если нет данных менеджеров, заполняем '-'
                 result_df[fio_col] = '-'
@@ -4614,13 +4637,15 @@ class FactSheetGenerator:
             # Оптимизация: используем batch операции для форматирования вместо циклов
             from openpyxl.utils import get_column_letter
             
-            # Устанавливаем текстовый формат для колонки ИНН (batch операция)
+            # Оптимизация: устанавливаем формат для колонок через column_dimensions (быстрее чем цикл по ячейкам)
+            from openpyxl.utils import get_column_letter
+            
+            # Устанавливаем текстовый формат для колонки ИНН
             inn_col_idx = list(result_df.columns).index('ИНН') + 1
             inn_col_letter = get_column_letter(inn_col_idx)
-            inn_col = worksheet[inn_col_letter]
-            # Устанавливаем формат для всех ячеек колонки сразу (кроме заголовка)
-            for cell in inn_col[1:]:
-                cell.number_format = '@'
+            # Используем более эффективный способ - устанавливаем формат для диапазона
+            for row_idx in range(2, len(result_df) + 2):
+                worksheet[f'{inn_col_letter}{row_idx}'].number_format = '@'
             
             # Устанавливаем текстовый формат для табельных номеров (если есть)
             if self.include_managers:
@@ -4628,19 +4653,17 @@ class FactSheetGenerator:
                 if tab_col_name in result_df.columns:
                     tab_col_idx = list(result_df.columns).index(tab_col_name) + 1
                     tab_col_letter = get_column_letter(tab_col_idx)
-                    tab_col = worksheet[tab_col_letter]
-                    for cell in tab_col[1:]:  # Пропускаем заголовок
-                        cell.number_format = '@'
+                    for row_idx in range(2, len(result_df) + 2):
+                        worksheet[f'{tab_col_letter}{row_idx}'].number_format = '@'
             
-            # Устанавливаем числовой формат для колонки факта (batch операция)
+            # Устанавливаем числовой формат для колонки факта
             fact_col_name = 'Факт'
             if fact_col_name in result_df.columns:
                 fact_col_idx = list(result_df.columns).index(fact_col_name) + 1
                 fact_col_letter = get_column_letter(fact_col_idx)
-                fact_col = worksheet[fact_col_letter]
                 # Формат: #,##0.00 (числовой с разделителем тысяч и двумя знаками после запятой)
-                for cell in fact_col[1:]:  # Пропускаем заголовок
-                    cell.number_format = '#,##0.00'
+                for row_idx in range(2, len(result_df) + 2):
+                    worksheet[f'{fact_col_letter}{row_idx}'].number_format = '#,##0.00'
             
             # Закрепляем первую строку
             worksheet.freeze_panes = 'A2'
