@@ -4245,7 +4245,11 @@ class FactSheetGenerator:
                     # Создаем варианты табельных номеров (с нулями и без) через векторизацию
                     manager_base_df['tab_key_zfilled'] = manager_base_df['tab_key'].str.zfill(8)
                     manager_base_df['tab_key_no_zeros'] = manager_base_df['tab_key'].str.lstrip('0')
-                    manager_base_df['tab_key_no_zeros'] = manager_base_df['tab_key_no_zeros'].replace('', manager_base_df['tab_key'])
+                    # Заменяем пустые строки на оригинальный ключ (используем where вместо replace)
+                    manager_base_df['tab_key_no_zeros'] = manager_base_df['tab_key_no_zeros'].where(
+                        manager_base_df['tab_key_no_zeros'] != '',
+                        manager_base_df['tab_key']
+                    )
                     
                     # Создаем расширенный lookup DataFrame со всеми вариантами
                     lookup_rows = []
