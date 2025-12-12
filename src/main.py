@@ -3680,7 +3680,8 @@ class FactSheetGenerator:
                 duplicate_indices.append(base_idx)
                 # 40% меняем ТБ/ГОСБ
                 if rng.random() >= same_org_pct and len(available_org_units) > 0:
-                    org_idx = rng.randint(0, len(available_org_units))
+                    # Исправление: randint(0, len-1) для корректных индексов
+                    org_idx = rng.randint(0, len(available_org_units) - 1) if len(available_org_units) > 1 else 0
                     duplicate_org_changes.append((dup_result_idx, org_idx))
             idx += 1
         
@@ -3695,7 +3696,7 @@ class FactSheetGenerator:
                 dup_result_idx = len(duplicate_indices)
                 duplicate_indices.append(base_idx)
                 if rng.random() >= same_org_pct and len(available_org_units) > 0:
-                    org_idx = rng.randint(0, len(available_org_units))
+                    org_idx = rng.randint(0, len(available_org_units) - 1) if len(available_org_units) > 1 else 0
                     duplicate_org_changes.append((dup_result_idx, org_idx))
             idx += 1
         
@@ -3710,7 +3711,7 @@ class FactSheetGenerator:
                 dup_result_idx = len(duplicate_indices)
                 duplicate_indices.append(base_idx)
                 if rng.random() >= same_org_pct and len(available_org_units) > 0:
-                    org_idx = rng.randint(0, len(available_org_units))
+                    org_idx = rng.randint(0, len(available_org_units) - 1) if len(available_org_units) > 1 else 0
                     duplicate_org_changes.append((dup_result_idx, org_idx))
             idx += 1
         
@@ -3721,14 +3722,14 @@ class FactSheetGenerator:
             dup_result_idx = len(duplicate_indices)
             duplicate_indices.append(row_idx)
             if rng.random() >= same_org_pct and len(available_org_units) > 0:
-                org_idx = rng.randint(0, len(available_org_units))
+                org_idx = rng.randint(0, len(available_org_units) - 1) if len(available_org_units) > 1 else 0
                 duplicate_org_changes.append((dup_result_idx, org_idx))
             client_cycle_idx += 1
         
         # Обрезаем до целевого количества
         if len(duplicate_indices) > target_total_rows:
             duplicate_indices = duplicate_indices[:target_total_rows]
-            # Фильтруем изменения ТБ/ГОСБ
+            # Фильтруем изменения ТБ/ГОСБ - только те, что остались после обрезки
             duplicate_org_changes = [(i, org_idx) for i, org_idx in duplicate_org_changes if i < target_total_rows]
         
         # Векторизованное создание DataFrame из индексов
@@ -3736,16 +3737,27 @@ class FactSheetGenerator:
         
         # Применяем изменения ТБ/ГОСБ векторизованно
         if duplicate_org_changes and len(available_org_units) > 0:
-            # Создаем массив изменений
-            org_changes_dict = {idx: org_idx for idx, org_idx in duplicate_org_changes}
+            # Создаем массив изменений с проверкой границ
+            org_changes_dict = {}
+            for idx, org_idx in duplicate_org_changes:
+                # Проверяем, что индекс находится в допустимых границах
+                if 0 <= org_idx < len(available_org_units):
+                    org_changes_dict[idx] = org_idx
+            
             change_indices = list(org_changes_dict.keys())
             if change_indices:
-                # Получаем новые значения ТБ/ГОСБ
-                new_orgs = available_org_units.iloc[[org_changes_dict[idx] for idx in change_indices]]
-                # Применяем изменения векторизованно
-                result_df.loc[change_indices, org_code_col] = new_orgs[org_code_col].values
-                result_df.loc[change_indices, tb_col] = new_orgs[tb_col].values
-                result_df.loc[change_indices, gosb_col] = new_orgs[gosb_col].values
+                try:
+                    # Получаем новые значения ТБ/ГОСБ с проверкой границ
+                    org_indices_list = [org_changes_dict[idx] for idx in change_indices]
+                    # Проверяем, что все индексы в допустимых границах
+                    if all(0 <= idx < len(available_org_units) for idx in org_indices_list):
+                        new_orgs = available_org_units.iloc[org_indices_list]
+                        # Применяем изменения векторизованно
+                        result_df.loc[change_indices, org_code_col] = new_orgs[org_code_col].values
+                        result_df.loc[change_indices, tb_col] = new_orgs[tb_col].values
+                        result_df.loc[change_indices, gosb_col] = new_orgs[gosb_col].values
+                except (IndexError, KeyError) as e:
+                    self.logger.warning(f"Ошибка при применении изменений ТБ/ГОСБ для месяца {month}: {str(e)}. Пропускаем изменения. [class: FactSheetGenerator | def: _duplicate_rows]")
         
         # Проверяем результат
         if len(result_df) < target_total_rows:
