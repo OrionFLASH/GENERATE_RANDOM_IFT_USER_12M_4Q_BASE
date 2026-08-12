@@ -62,6 +62,10 @@ OUT/
 IN/**
 OUT/**
 
+# Снимок для выкладки
+POST/
+POST/**
+
 # На всякий случай: сгенерированные Excel/CSV вне OUT (если появятся в корне)
 result_base*.xlsx
 employee_list*.xlsx
