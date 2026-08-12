@@ -56,7 +56,17 @@ Thumbs.db
 ~$*.xlsx
 ~$*.xls
 
-# Входные и выходные файлы
+# Входные и выходные данные (большие CSV/Excel — не в git)
 IN/
 OUT/
+IN/**
+OUT/**
+
+# На всякий случай: сгенерированные Excel/CSV вне OUT (если появятся в корне)
+result_base*.xlsx
+employee_list*.xlsx
+employee_list*.csv
+M-*_OD_*.xlsx
+M-*_RA_*.xlsx
+M-*_PS_*.xlsx
 
