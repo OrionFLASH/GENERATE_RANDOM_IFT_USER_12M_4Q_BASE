@@ -25,7 +25,20 @@
       "org_sheet_name": "ORG",
       "include_users_in_employee_xlsx": true,
       "org_distribution": {
-        "mode": "even"
+        "mode": "even",
+        "per_tb": {
+          "enabled": true,
+          "min": 700,
+          "max": 2200,
+          "overrides": {}
+        },
+        "per_tb_gosb": {
+          "enabled": true,
+          "min": 100,
+          "max": 200,
+          "overrides": {}
+        },
+        "fixed": {}
       },
       "columns": [
         "PERSON_NUMBER", "PERSON_NUMBER_ADD", "SURNAME", "FIRST_NAME", "MIDDLE_NAME", "MANAGER_FULL_NAME", "POSITION_NAME", "SOURCE_ORG_UNIT_ID",

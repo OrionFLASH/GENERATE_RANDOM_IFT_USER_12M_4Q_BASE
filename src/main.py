@@ -4788,52 +4788,231 @@ class EmployeeAppendGenerator:
         self.logger.info(f"Подразделений для распределения EMPLOYEE: {len(units)}")
         return units
 
+    def _limit_pair(
+        self,
+        cfg: Dict[str, Any],
+        key: str,
+        enabled: bool,
+        default_max: int
+    ) -> tuple:
+        """min/max для ключа с учётом overrides."""
+        if not enabled:
+            return 0, default_max
+        overrides = cfg.get("overrides") or {}
+        ov = overrides.get(key) or {}
+        mn = int(ov.get("min", cfg.get("min", 0)))
+        mx = int(ov.get("max", cfg.get("max", default_max)))
+        mn = max(0, mn)
+        mx = max(mn, mx)
+        return mn, mx
+
     def _allocate_orgs(self, count: int, units: List[Dict[str, str]]) -> List[Dict[str, str]]:
-        """Распределение count записей по подразделениям."""
+        """
+        Распределение count записей по подразделениям.
+
+        Учитывает:
+        - mode: even | random
+        - fixed: точные количества по коду подразделения или TB|GOSB
+        - per_tb: min/max людей на ТБ (и overrides по коду ТБ)
+        - per_tb_gosb: min/max на пару ТБ+ГОСБ (ключ \"TB|GOSB\")
+        """
         mode = str(self.org_distribution.get("mode", "even")).lower()
         fixed = self.org_distribution.get("fixed", {}) or {}
-        result: List[Dict[str, str]] = []
+        tb_cfg = self.org_distribution.get("per_tb") or {}
+        tg_cfg = self.org_distribution.get("per_tb_gosb") or {}
+        use_tb = bool(tb_cfg.get("enabled", False))
+        use_tg = bool(tg_cfg.get("enabled", False))
 
+        # Корзины TB|GOSB → список подразделений
+        by_tg: Dict[str, List[Dict[str, str]]] = {}
+        for u in units:
+            key = f"{u['TB_CODE']}|{u['GOSB_CODE']}"
+            by_tg.setdefault(key, []).append(u)
+        tg_keys = list(by_tg.keys())
+        tb_codes = sorted({k.split("|", 1)[0] for k in tg_keys})
+
+        unit_by_org = {u["ORG_UNIT_CODE"]: u for u in units}
+
+        # --- fixed: сначала закрываем явные квоты ---
+        targets: Dict[str, int] = {k: 0 for k in tg_keys}
+        assigned = 0
         if fixed:
-            unit_by_org = {u["ORG_UNIT_CODE"]: u for u in units}
-            unit_by_tb_gosb: Dict[str, List[Dict[str, str]]] = {}
-            for u in units:
-                key = f"{u['TB_CODE']}|{u['GOSB_CODE']}"
-                unit_by_tb_gosb.setdefault(key, []).append(u)
-
-            remaining = count
             for key, n in fixed.items():
                 n = int(n)
                 if n <= 0:
                     continue
-                chosen_units: List[Dict[str, str]] = []
                 if key in unit_by_org:
-                    chosen_units = [unit_by_org[key]]
-                elif key in unit_by_tb_gosb:
-                    chosen_units = unit_by_tb_gosb[key]
+                    u = unit_by_org[key]
+                    tg = f"{u['TB_CODE']}|{u['GOSB_CODE']}"
+                    targets[tg] = targets.get(tg, 0) + n
+                    assigned += n
+                elif key in by_tg:
+                    targets[key] = targets.get(key, 0) + n
+                    assigned += n
                 else:
                     self.logger.warning(f"fixed distribution ключ не найден в ORG: {key}")
+            if assigned > count:
+                self.logger.warning(
+                    f"Сумма fixed ({assigned}) больше count ({count}), обрезаем"
+                )
+                # пропорционально обрежем
+                scale = count / assigned
+                rest = count
+                items = list(targets.items())
+                for i, (k, v) in enumerate(items):
+                    if i == len(items) - 1:
+                        targets[k] = rest
+                    else:
+                        targets[k] = int(v * scale)
+                        rest -= targets[k]
+                assigned = count
+
+        remaining = count - sum(targets.values())
+
+        def tg_lim(key: str) -> tuple:
+            return self._limit_pair(tg_cfg, key, use_tg, count)
+
+        def tb_lim(tb: str) -> tuple:
+            return self._limit_pair(tb_cfg, tb, use_tb, count)
+
+        def tb_current(tb: str) -> int:
+            return sum(targets[k] for k in tg_keys if k.split("|", 1)[0] == tb)
+
+        # --- минимумы per_tb_gosb ---
+        if use_tg and remaining > 0:
+            for k in tg_keys:
+                mn, mx = tg_lim(k)
+                need = max(0, mn - targets[k])
+                if need <= 0:
                     continue
-                for i in range(n):
-                    result.append(chosen_units[i % len(chosen_units)])
-                remaining -= n
+                add = min(need, remaining, max(0, mx - targets[k]))
+                # не нарушаем max ТБ
+                tb = k.split("|", 1)[0]
+                _, tb_mx = tb_lim(tb)
+                add = min(add, max(0, tb_mx - tb_current(tb)))
+                targets[k] += add
+                remaining -= add
+
+        # --- минимумы per_tb (добиваем по корзинам ТБ) ---
+        if use_tb and remaining > 0:
+            for tb in tb_codes:
+                tb_mn, tb_mx = tb_lim(tb)
+                need = max(0, tb_mn - tb_current(tb))
+                if need <= 0:
+                    continue
+                # кандидаты внутри ТБ с запасом до max TG
+                cand = []
+                for k in tg_keys:
+                    if k.split("|", 1)[0] != tb:
+                        continue
+                    _, mx = tg_lim(k)
+                    room = mx - targets[k]
+                    if room > 0:
+                        cand.append(k)
+                if not cand:
+                    self.logger.warning(
+                        f"Не удалось набрать min для ТБ {tb}: нет места в ТБ+ГОСБ"
+                    )
+                    continue
+                i = 0
+                guard = need * 5 + 10
+                while need > 0 and remaining > 0 and guard > 0:
+                    guard -= 1
+                    k = cand[i % len(cand)]
+                    i += 1
+                    _, mx = tg_lim(k)
+                    if targets[k] >= mx or tb_current(tb) >= tb_mx:
+                        # убрать переполненные
+                        cand = [
+                            x for x in cand
+                            if targets[x] < tg_lim(x)[1] and tb_current(tb) < tb_mx
+                        ]
+                        if not cand:
+                            break
+                        continue
+                    targets[k] += 1
+                    need -= 1
+                    remaining -= 1
+
+        # --- остаток: even/random с учётом max ---
+        if remaining > 0:
+            i = 0
+            guard = remaining * 20 + 100
+            while remaining > 0 and guard > 0:
+                guard -= 1
+                candidates: List[str] = []
+                for k in tg_keys:
+                    _, mx = tg_lim(k)
+                    tb = k.split("|", 1)[0]
+                    _, tb_mx = tb_lim(tb)
+                    if targets[k] < mx and tb_current(tb) < tb_mx:
+                        candidates.append(k)
+                if not candidates:
+                    self.logger.warning(
+                        f"Лимиты per_tb/per_tb_gosb исчерпаны, остаток {remaining} "
+                        f"раздаём без max-ограничений"
+                    )
+                    candidates = tg_keys
+                    if not candidates:
+                        break
+                    # форс без max
+                    for _ in range(remaining):
+                        k = (
+                            candidates[i % len(candidates)]
+                            if mode == "even"
+                            else self.random.choice(candidates)
+                        )
+                        i += 1
+                        targets[k] += 1
+                    remaining = 0
+                    break
+
+                if mode == "random":
+                    k = self.random.choice(candidates)
+                else:
+                    k = candidates[i % len(candidates)]
+                    i += 1
+                targets[k] += 1
+                remaining -= 1
 
             if remaining > 0:
-                for i in range(remaining):
-                    result.append(
-                        units[i % len(units)] if mode == "even" else self.random.choice(units)
-                    )
-            elif remaining < 0:
-                self.logger.warning(
-                    f"Сумма fixed ({count - remaining}) больше count ({count}), обрезаем"
-                )
-                result = result[:count]
-            return result
+                self.logger.warning(f"Не размещено {remaining} записей по ORG")
 
+        # Лог сводки
+        if use_tb or use_tg:
+            tb_summary = {tb: tb_current(tb) for tb in tb_codes}
+            self.logger.info(
+                f"Распределение по ТБ (min/max "
+                f"{'вкл' if use_tb else 'выкл'}): {tb_summary}"
+            )
+            self.logger.debug(
+                f"Распределение по ТБ|ГОСБ: {dict(sorted(targets.items()))} "
+                f"[class: EmployeeAppendGenerator | def: _allocate_orgs]"
+            )
+
+        # Разворачиваем targets → список подразделений
+        result: List[Dict[str, str]] = []
+        for k, n in targets.items():
+            bucket = by_tg[k]
+            for i in range(n):
+                result.append(bucket[i % len(bucket)])
+
+        # Перемешаем слегка при random, чтобы правила не шли блоками по ТБ подряд
         if mode == "random":
-            return [self.random.choice(units) for _ in range(count)]
+            self.random.shuffle(result)
 
-        return [units[i % len(units)] for i in range(count)]
+        if len(result) != count:
+            # подгонка длины (на всякий случай)
+            if len(result) > count:
+                result = result[:count]
+            else:
+                while len(result) < count:
+                    result.append(
+                        units[len(result) % len(units)]
+                        if mode == "even"
+                        else self.random.choice(units)
+                    )
+        return result
 
     def _next_person_number(self) -> str:
         """
@@ -4916,6 +5095,11 @@ class EmployeeAppendGenerator:
         """Генерация новых строк EMPLOYEE по generation[]."""
         rows: List[Dict[str, str]] = []
 
+        # Сначала распределяем ВСЕ новые записи по ORG с учётом min/max ТБ и ТБ+ГОСБ
+        total_new = sum(int(rule.get("count", 0)) for rule in self.generation)
+        all_org_assign = self._allocate_orgs(total_new, units) if total_new > 0 else []
+        org_offset = 0
+
         for rule in self.generation:
             business_block = str(rule["business_block"])
             role_code = str(rule["role_code"])
@@ -4927,7 +5111,12 @@ class EmployeeAppendGenerator:
             self.logger.info(
                 f"Генерация EMPLOYEE: {business_block} / {role_code} / UCH={uch_code} → {count}"
             )
-            org_assign = self._allocate_orgs(count, units)
+            org_assign = all_org_assign[org_offset: org_offset + count]
+            org_offset += count
+            if len(org_assign) < count:
+                # на случай рассинхрона — добираем
+                extra = self._allocate_orgs(count - len(org_assign), units)
+                org_assign = list(org_assign) + extra
 
             for i in range(count):
                 gender = "1" if self.random.random() < gender_dist else "2"
