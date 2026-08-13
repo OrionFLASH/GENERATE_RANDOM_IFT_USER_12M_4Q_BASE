@@ -14,6 +14,7 @@
 # Итоговая конфигурация = deep-merge(common, файл_режима).
 
 import json
+import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -26,6 +27,120 @@ def _project_root() -> Path:
 def _config_dir() -> Path:
     """Каталог с файлами конфигурации."""
     return _project_root() / "config"
+
+
+# Имя приложения для fallback до загрузки конфига (совпадает с config/common.json)
+_APP_NAME_FALLBACK: str = "GENERATE_RANDOM_IFT_USER_12M_4Q_BASE"
+
+
+def _resolve_path(path_str: str, base: Optional[Path] = None) -> Path:
+    """
+    Разрешение пути относительно корня проекта.
+
+    Абсолютные пути возвращаются как есть.
+    Относительные (log, OUT, IN/...) привязываются к корню проекта,
+    а не к текущей рабочей директории (CWD) — иначе при запуске из IDE
+    на Windows часто возникает PermissionError или FileNotFoundError.
+
+    Args:
+        path_str: Строка пути из конфига или кода
+        base: База для относительных путей (по умолчанию — корень проекта)
+
+    Returns:
+        Абсолютный Path
+    """
+    path = Path(path_str)
+    if path.is_absolute():
+        return path
+    root = base if base is not None else _project_root()
+    return (root / path).resolve()
+
+
+def _ensure_writable_dir(preferred: Path, fallback_subdir: str) -> Path:
+    """
+    Создание каталога с запасным вариантом при отказе в доступе.
+
+    Сначала пытается создать preferred (mkdir parents=True).
+    При PermissionError / OSError — каталог в домашней папке пользователя:
+    ~/.GENERATE_RANDOM_IFT_USER_12M_4Q_BASE/<fallback_subdir>
+
+    Args:
+        preferred: Предпочтительный каталог
+        fallback_subdir: Имя подкаталога в домашнем fallback
+
+    Returns:
+        Путь к фактически используемому каталогу
+    """
+    candidates: List[Path] = [
+        preferred,
+        Path.home() / f".{_APP_NAME_FALLBACK}" / fallback_subdir,
+        Path.home() / fallback_subdir,
+    ]
+    last_error: Optional[BaseException] = None
+    for candidate in candidates:
+        try:
+            candidate.mkdir(parents=True, exist_ok=True)
+            # Проверка на запись (на Windows mkdir может пройти, а запись — нет)
+            probe = candidate / ".write_probe"
+            probe.write_text("ok", encoding="utf-8")
+            try:
+                probe.unlink()
+            except OSError:
+                pass
+            if candidate != preferred:
+                print(
+                    f"Внимание: нет доступа к {preferred}. "
+                    f"Используется запасной каталог: {candidate}",
+                    file=sys.stderr,
+                )
+            return candidate
+        except (PermissionError, OSError) as exc:
+            last_error = exc
+            continue
+    raise PermissionError(
+        f"Не удалось создать каталог для записи. "
+        f"Пробовали: {', '.join(str(c) for c in candidates)}. "
+        f"Последняя ошибка: {last_error}"
+    )
+
+
+def _as_output_dir(output_dir: str) -> Path:
+    """
+    Каталог вывода: относительный путь от корня проекта + проверка записи.
+
+    Args:
+        output_dir: Путь из конфига или аргумента (относительный или абсолютный)
+
+    Returns:
+        Абсолютный Path готового к записи каталога
+    """
+    return _ensure_writable_dir(_resolve_path(output_dir), fallback_subdir="OUT")
+
+
+def _normalize_config_paths(cfg: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Нормализация путей в конфиге: относительные → абсолютные от корня проекта.
+
+    Затрагивает logging.log_dir, output.output_dir, loaders.*.input_file,
+    loaders.*.source_file, loaders.*.output_dir.
+    """
+    logging_cfg = cfg.get("logging")
+    if isinstance(logging_cfg, dict) and "log_dir" in logging_cfg:
+        logging_cfg["log_dir"] = str(_resolve_path(str(logging_cfg["log_dir"])))
+
+    output_cfg = cfg.get("output")
+    if isinstance(output_cfg, dict) and "output_dir" in output_cfg:
+        output_cfg["output_dir"] = str(_resolve_path(str(output_cfg["output_dir"])))
+
+    loaders = cfg.get("loaders")
+    if isinstance(loaders, dict):
+        for loader_cfg in loaders.values():
+            if not isinstance(loader_cfg, dict):
+                continue
+            for key in ("input_file", "source_file", "output_dir"):
+                if key in loader_cfg and loader_cfg[key]:
+                    loader_cfg[key] = str(_resolve_path(str(loader_cfg[key])))
+    return cfg
 
 
 def _deep_merge(base: Dict[str, Any], override: Dict[str, Any]) -> Dict[str, Any]:
@@ -123,6 +238,7 @@ def load_config(config_dir: Optional[Path] = None) -> Dict[str, Any]:
         )
 
     merged["loaders"] = _normalize_loader_config(merged["loaders"])
+    merged = _normalize_config_paths(merged)
     return merged
 
 
@@ -135,6 +251,7 @@ DEBUG: bool = bool(_CONFIG["app"].get("debug", False))
 # Режим: "full" (полный пайплайн) или "employee_append" (ORG → USERS/EMPLOYEE)
 APP_MODE: str = str(_CONFIG["app"].get("mode", "full")).strip().lower()
 
+# Абсолютные пути (нормализованы в load_config относительно корня проекта)
 LOG_DIR: str = _CONFIG["logging"]["log_dir"]
 LOG_LEVEL: str = _CONFIG["logging"]["log_level"]
 
@@ -172,8 +289,9 @@ class ProjectLogger:
             log_dir: Директория для хранения логов
             log_level: Уровень логирования (INFO или DEBUG)
         """
-        self.log_dir = Path(log_dir)
-        self.log_dir.mkdir(exist_ok=True)
+        # Относительный путь → корень проекта; при PermissionError — fallback в home
+        preferred_log_dir = _resolve_path(log_dir)
+        self.log_dir = _ensure_writable_dir(preferred_log_dir, fallback_subdir="log")
         self.log_level = getattr(logging, log_level.upper(), logging.DEBUG)
         
         # Настройка форматирования для DEBUG
@@ -330,10 +448,9 @@ class OrgUnitsLoader:
             logger: Логгер для записи событий
         """
         self.config = config
-        self.input_file = Path(config['input_file'])
+        self.input_file = _resolve_path(str(config['input_file']))
         self.output_file_base = output_file_base
-        self.output_dir = Path(output_dir)
-        self.output_dir.mkdir(exist_ok=True)  # Создаем папку, если её нет
+        self.output_dir = _as_output_dir(output_dir)
         self.logger = logger or logging.getLogger(__name__)
         
         # Маппинг колонок: исходное_имя -> результирующее_имя
@@ -648,8 +765,7 @@ class UserGenerator:
         self.config = config
         self.org_data = org_data
         self.output_file_base = output_file_base
-        self.output_dir = Path(output_dir)
-        self.output_dir.mkdir(exist_ok=True)
+        self.output_dir = _as_output_dir(output_dir)
         self.logger = logger or logging.getLogger(__name__)
         
         # Настройки Excel
@@ -1276,8 +1392,7 @@ class UserChangeGenerator:
         self.users_data = users_data
         self.org_data = org_data
         self.output_file_base = output_file_base
-        self.output_dir = Path(output_dir)
-        self.output_dir.mkdir(exist_ok=True)
+        self.output_dir = _as_output_dir(output_dir)
         self.logger = logger or logging.getLogger(__name__)
         
         # Настройки Excel
@@ -1885,8 +2000,7 @@ class ClientGenerator:
         """
         self.config = config
         self.output_file_base = output_file_base
-        self.output_dir = Path(output_dir)
-        self.output_dir.mkdir(exist_ok=True)
+        self.output_dir = _as_output_dir(output_dir)
         self.logger = logger or logging.getLogger(__name__)
         
         # Настройки Excel
@@ -2238,8 +2352,7 @@ class ClientChangeGenerator:
         self.clients_data = clients_data
         self.user_cng_data = user_cng_data
         self.output_file_base = output_file_base
-        self.output_dir = Path(output_dir)
-        self.output_dir.mkdir(exist_ok=True)
+        self.output_dir = _as_output_dir(output_dir)
         self.logger = logger or logging.getLogger(__name__)
         
         # Настройки Excel
@@ -3056,8 +3169,7 @@ class FactSheetGenerator:
         self.client_cng_data = client_cng_data
         self.user_cng_data = user_cng_data
         self.output_file_base = output_file_base
-        self.output_dir = Path(output_dir)
-        self.output_dir.mkdir(exist_ok=True)
+        self.output_dir = _as_output_dir(output_dir)
         self.logger = logger or logging.getLogger(__name__)
         
         # Настройки Excel
@@ -4650,12 +4762,11 @@ class EmployeeAppendGenerator:
         self.org_data = org_data.copy()
         self.users_name_config = users_name_config
         self.output_file_base = output_file_base
-        self.output_dir = Path(output_dir)
-        self.output_dir.mkdir(exist_ok=True)
+        self.output_dir = _as_output_dir(output_dir)
         self.workbook_base = workbook_base or output_file_base
         self.logger = logger or logging.getLogger(__name__)
 
-        self.source_file = Path(config["source_file"])
+        self.source_file = _resolve_path(str(config["source_file"]))
         self.csv_separator = config.get("csv_separator", ";")
         self.encoding = config.get("encoding", "utf-8")
         self.sheet_name = config.get("sheet_name", "EMPLOYEE")
